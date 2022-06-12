@@ -1,0 +1,23 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create'
+        required: true
+        default: 'v0.0.0'
+
+# See https://github.com/cristalhq/.github/.github/workflows
+jobs:
+  build:
+    uses: cristalhq/.github/.github/workflows/build.yml@main
+
+  release:
+    if: github.event_name == 'workflow_dispatch'
+    uses: cristalhq/.github/.github/workflows/release.yml@main
+    with:
+      tag: ${{ github.event.input.tag }}
