@@ -1,14 +1,14 @@
-package qder_test
+package builq_test
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cristalhq/qder"
+	"github.com/cristalhq/builq"
 )
 
 func ExampleQuery1() {
-	q := qder.Newf("SELECT %s FROM %s", "foo, bar", "users")
+	q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
 	q.Append("WHERE")
 	q.Append("active IS TRUE")
 	x := q.AddParam(42)
@@ -25,7 +25,7 @@ func ExampleQuery1() {
 }
 
 func ExampleQuery2() {
-	q := qder.Newf("SELECT %s FROM %s", "foo, bar", "users")
+	q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
 	q.Append("WHERE")
 	q.Add("active = ", true)
 	q.Add("AND user_id = ", 42)
@@ -45,7 +45,7 @@ func ExampleQuery2() {
 }
 
 func ExampleQuery3() {
-	q := qder.Newf("SELECT * FROM foo")
+	q := builq.Newf("SELECT * FROM foo")
 	q.Append("WHERE active IS TRUE")
 	q.Append("AND user_id = " + q.AddParam(42))
 	q.Append("LIMIT 100;")

@@ -1,4 +1,4 @@
-# qder
+# builq
 
 [![build-img]][build-url]
 [![pkg-img]][pkg-url]
@@ -6,7 +6,7 @@
 [![coverage-img]][coverage-url]
 [![version-img]][version-url]
 
-Query builder for Go.
+Easily build queries in Go.
 
 ## Rationale
 
@@ -23,13 +23,13 @@ Often simple string representing SQL query is what we are looking for. But the p
 Go version 1.17+
 
 ```
-go get github.com/cristalhq/qder
+go get github.com/cristalhq/builq
 ```
 
 ## Example
 
 ```go
-q := qder.Newf("SELECT %s FROM %s", "foo, bar", "users")
+q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
 q.Append("WHERE")
 q.Add("active = ", true)
 q.Add("AND user_id = ", 42)
@@ -56,13 +56,13 @@ See [these docs][pkg-url].
 
 [MIT License](LICENSE).
 
-[build-img]: https://github.com/cristalhq/qder/workflows/build/badge.svg
-[build-url]: https://github.com/cristalhq/qder/actions
-[pkg-img]: https://pkg.go.dev/badge/cristalhq/qder
-[pkg-url]: https://pkg.go.dev/github.com/cristalhq/qder
-[reportcard-img]: https://goreportcard.com/badge/cristalhq/qder
-[reportcard-url]: https://goreportcard.com/report/cristalhq/qder
-[coverage-img]: https://codecov.io/gh/cristalhq/qder/branch/main/graph/badge.svg
-[coverage-url]: https://codecov.io/gh/cristalhq/qder
-[version-img]: https://img.shields.io/github/v/release/cristalhq/qder
-[version-url]: https://github.com/cristalhq/qder/releases
+[build-img]: https://github.com/cristalhq/builq/workflows/build/badge.svg
+[build-url]: https://github.com/cristalhq/builq/actions
+[pkg-img]: https://pkg.go.dev/badge/cristalhq/builq
+[pkg-url]: https://pkg.go.dev/github.com/cristalhq/builq
+[reportcard-img]: https://goreportcard.com/badge/cristalhq/builq
+[reportcard-url]: https://goreportcard.com/report/cristalhq/builq
+[coverage-img]: https://codecov.io/gh/cristalhq/builq/branch/main/graph/badge.svg
+[coverage-url]: https://codecov.io/gh/cristalhq/builq
+[version-img]: https://img.shields.io/github/v/release/cristalhq/builq
+[version-url]: https://github.com/cristalhq/builq/releases

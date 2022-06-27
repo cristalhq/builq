@@ -1,4 +1,4 @@
-package qder
+package builq
 
 import (
 	"fmt"
