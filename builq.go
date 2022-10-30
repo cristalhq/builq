@@ -47,3 +47,15 @@ func (b *Builder) AddParam(v interface{}) string {
 	b.args = append(b.args, v)
 	return fmt.Sprintf("$%d", len(b.args))
 }
+
+// AddParams add parameters and return its index in query.
+func (b *Builder) AddParams(v ...interface{}) string {
+	res := ""
+	for i, v := range v {
+		if i > 0 {
+			res += ", "
+		}
+		res += b.AddParam(v)
+	}
+	return res
+}

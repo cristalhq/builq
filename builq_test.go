@@ -3,6 +3,8 @@ package builq_test
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/cristalhq/builq"
 )
@@ -58,6 +60,24 @@ func ExampleQuery3() {
 	// WHERE active IS TRUE
 	// AND user_id = $1
 	// LIMIT 100;
+}
+
+func ExampleQuery4() {
+	args := []interface{}{42, time.Now(), "just testing"}
+
+	q := builq.Newf("INSERT (%s) INTO %s", getColumns(), "table")
+	q.Append("VALUES (" + q.AddParams(args...) + ");")
+
+	doQuery(q.Query(), q.Args()...)
+
+	// Output:
+	//
+	// INSERT (id, created_at, value) INTO table
+	// VALUES ($1, $2, $3);
+}
+
+func getColumns() string {
+	return strings.Join([]string{"id", "created_at", "value"}, ", ")
 }
 
 func doQuery(query string, args ...interface{}) {
