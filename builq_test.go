@@ -64,7 +64,7 @@ func ExampleQuery3() {
 }
 
 func ExampleQuery4() {
-	args := []interface{}{42, time.Now(), "just testing"}
+	args := []any{42, time.Now(), "just testing"}
 
 	var b builq.Builder
 	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")

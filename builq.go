@@ -11,11 +11,11 @@ var Placeholder = "$"
 // Builder for SQL queries. The zero value is ready to use, just like strings.Builder.
 type Builder struct {
 	query strings.Builder
-	args  []interface{}
+	args  []any
 }
 
-func (b *Builder) Appendf(format string, args ...interface{}) *Builder {
-	wargs := make([]interface{}, len(args))
+func (b *Builder) Appendf(format string, args ...any) *Builder {
+	wargs := make([]any, len(args))
 	for i, arg := range args {
 		wargs[i] = &argument{value: arg}
 	}
@@ -31,13 +31,13 @@ func (b *Builder) Appendf(format string, args ...interface{}) *Builder {
 	return b
 }
 
-func (b *Builder) Build() (string, []interface{}, error) {
+func (b *Builder) Build() (string, []any, error) {
 	return b.query.String(), b.args, nil
 }
 
 // argument is a wrapper for Printf-style arguments that implements fmt.Formatter.
 type argument struct {
-	value    interface{}
+	value    any
 	forQuery bool // is it a query argument?
 }
 
