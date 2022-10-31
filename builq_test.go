@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleQuery1() {
-	var b builq.Builder
+	b := builq.NewPostgreSQL()
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Appendf("WHERE")
 	b.Appendf("active IS TRUE")
@@ -22,11 +22,11 @@ func ExampleQuery1() {
 	// SELECT foo, bar FROM users
 	// WHERE
 	// active IS TRUE
-	// AND user_id = $ OR invited_by = $
+	// AND user_id = $1 OR invited_by = $2
 }
 
 func ExampleQuery2() {
-	var b builq.Builder
+	b := builq.NewPostgreSQL()
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Appendf("WHERE")
 	b.Appendf("active = %a", true)
@@ -40,14 +40,14 @@ func ExampleQuery2() {
 	//
 	// SELECT foo, bar FROM users
 	// WHERE
-	// active = $
-	// AND user_id = $
+	// active = $1
+	// AND user_id = $2
 	// ORDER BY created_at
 	// LIMIT 100;
 }
 
 func ExampleQuery3() {
-	var b builq.Builder
+	b := builq.NewPostgreSQL()
 	b.Appendf("SELECT * FROM foo")
 	b.Appendf("WHERE active IS TRUE")
 	b.Appendf("AND user_id = %a", 42)
@@ -59,14 +59,14 @@ func ExampleQuery3() {
 	//
 	// SELECT * FROM foo
 	// WHERE active IS TRUE
-	// AND user_id = $
+	// AND user_id = $1
 	// LIMIT 100;
 }
 
 func ExampleQuery4() {
 	args := []any{42, time.Now(), "just testing"}
 
-	var b builq.Builder
+	b := builq.NewMySQL()
 	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
 	b.Appendf("VALUES (%a, %a, %a);", args...) // TODO(junk1tm): should %a support slices?
 	query, _, _ := b.Build()
@@ -75,7 +75,7 @@ func ExampleQuery4() {
 	// Output:
 	//
 	// INSERT (id, created_at, value) INTO table
-	// VALUES ($, $, $);
+	// VALUES (?, ?, ?);
 }
 
 func getColumns() string {
