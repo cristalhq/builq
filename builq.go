@@ -15,16 +15,19 @@ type Builder struct {
 }
 
 func (b *Builder) Appendf(format string, args ...interface{}) *Builder {
-	var wargs []interface{}
-	for _, arg := range args {
-		wargs = append(wargs, &argument{value: arg})
+	wargs := make([]interface{}, len(args))
+	for i, arg := range args {
+		wargs[i] = &argument{value: arg}
 	}
-	fmt.Fprintf(&b.query, format, wargs...)
+
+	fmt.Fprintf(&b.query, format+"\n", wargs...)
+
 	for _, warg := range wargs {
 		if arg := warg.(*argument); arg.forQuery {
 			b.args = append(b.args, arg.value)
 		}
 	}
+
 	return b
 }
 

@@ -10,9 +10,9 @@ import (
 
 func ExampleQuery1() {
 	var b builq.Builder
-	b.Appendf("SELECT %s FROM %s\n", "foo, bar", "users")
-	b.Appendf("WHERE\n")
-	b.Appendf("active IS TRUE\n")
+	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
+	b.Appendf("WHERE")
+	b.Appendf("active IS TRUE")
 	b.Appendf("AND user_id = %a OR invited_by = %a", 42, 42)
 	query, _, _ := b.Build()
 
@@ -27,11 +27,11 @@ func ExampleQuery1() {
 
 func ExampleQuery2() {
 	var b builq.Builder
-	b.Appendf("SELECT %s FROM %s\n", "foo, bar", "users")
-	b.Appendf("WHERE\n")
-	b.Appendf("active = %a\n", true)
-	b.Appendf("AND user_id = %a\n", 42)
-	b.Appendf("ORDER BY created_at\n")
+	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
+	b.Appendf("WHERE")
+	b.Appendf("active = %a", true)
+	b.Appendf("AND user_id = %a", 42)
+	b.Appendf("ORDER BY created_at")
 	b.Appendf("LIMIT 100;")
 	query, _, _ := b.Build()
 
@@ -48,9 +48,9 @@ func ExampleQuery2() {
 
 func ExampleQuery3() {
 	var b builq.Builder
-	b.Appendf("SELECT * FROM foo\n")
-	b.Appendf("WHERE active IS TRUE\n")
-	b.Appendf("AND user_id = %a\n", 42)
+	b.Appendf("SELECT * FROM foo")
+	b.Appendf("WHERE active IS TRUE")
+	b.Appendf("AND user_id = %a", 42)
 	b.Appendf("LIMIT 100;")
 	query, _, _ := b.Build()
 
@@ -67,7 +67,7 @@ func ExampleQuery4() {
 	args := []interface{}{42, time.Now(), "just testing"}
 
 	var b builq.Builder
-	b.Appendf("INSERT (%s) INTO %s\n", getColumns(), "table")
+	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
 	b.Appendf("VALUES (%a, %a, %a);", args...) // TODO(junk1tm): should %a support slices?
 	query, _, _ := b.Build()
 
