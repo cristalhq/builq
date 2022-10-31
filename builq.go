@@ -5,57 +5,50 @@ import (
 	"strings"
 )
 
-// Builder for SQL queries.
+// TODO(junk1tm): support PostgreSQL-style numbered placeholders.
+var Placeholder = "$"
+
+// Builder for SQL queries. The zero value is ready to use, just like strings.Builder.
 type Builder struct {
 	query strings.Builder
 	args  []interface{}
 }
 
-// Newf creates a new query
-func Newf(format string, args ...interface{}) *Builder {
-	b := &Builder{}
-	q := fmt.Sprintf(format, args...)
-	b.query.WriteString(q)
+func (b *Builder) Appendf(format string, args ...interface{}) *Builder {
+	var wargs []interface{}
+	for _, arg := range args {
+		wargs = append(wargs, &argument{value: arg})
+	}
+	fmt.Fprintf(&b.query, format, wargs...)
+	for _, warg := range wargs {
+		if arg := warg.(*argument); arg.forQuery {
+			b.args = append(b.args, arg.value)
+		}
+	}
 	return b
 }
 
-// Query that was build.
-func (b *Builder) Query() string { return b.query.String() }
+func (b *Builder) Build() (string, []interface{}, error) {
+	return b.query.String(), b.args, nil
+}
 
-// Args passed to the query.
-func (b *Builder) Args() []interface{} { return b.args }
+// argument is a wrapper for Printf-style arguments that implements fmt.Formatter.
+type argument struct {
+	value    interface{}
+	forQuery bool // is it a query argument?
+}
 
-// Append the expression with prepended "\n"
-// Optional expressions are prepended with " ".
-func (b *Builder) Append(expr string, exprs ...string) {
-	b.query.WriteString("\n" + expr)
-	for _, expr := range exprs {
-		b.query.WriteByte(' ')
-		b.query.WriteString(expr)
+// Format implements the fmt.Formatter interface.
+func (a *argument) Format(s fmt.State, v rune) {
+	switch v {
+	case 's':
+		// just a normal string (a table, a column, etc.), write it as is.
+		fmt.Fprint(s, a.value)
+	case 'a':
+		// a query argument, mark it and write a placeholder.
+		a.forQuery = true
+		fmt.Fprint(s, Placeholder)
+	default:
+		panic(fmt.Sprintf("unsupported verb %c", v))
 	}
-}
-
-// Add the expression and the parameter and return its index in query.
-func (b *Builder) Add(expr string, v interface{}) string {
-	param := b.AddParam(v)
-	b.query.WriteString("\n" + expr + param)
-	return param
-}
-
-// AddParam add parameter and return its index in query.
-func (b *Builder) AddParam(v interface{}) string {
-	b.args = append(b.args, v)
-	return fmt.Sprintf("$%d", len(b.args))
-}
-
-// AddParams add parameters and return its index in query.
-func (b *Builder) AddParams(v ...interface{}) string {
-	res := ""
-	for i, v := range v {
-		if i > 0 {
-			res += ", "
-		}
-		res += b.AddParam(v)
-	}
-	return res
 }
