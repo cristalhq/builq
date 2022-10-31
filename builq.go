@@ -8,7 +8,7 @@ import (
 // TODO(junk1tm): support PostgreSQL-style numbered placeholders.
 var Placeholder = "$"
 
-// Builder for SQL queries. The zero value is ready to use, just like strings.Builder.
+// Builder for SQL queries.
 type Builder struct {
 	query strings.Builder
 	args  []any
