@@ -2,60 +2,76 @@ package builq
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 // Builder for SQL queries.
 type Builder struct {
 	query strings.Builder
-	args  []interface{}
+	args  []any
+	pp    placeholderProvider
 }
 
-// Newf creates a new query
-func Newf(format string, args ...interface{}) *Builder {
-	b := &Builder{}
-	q := fmt.Sprintf(format, args...)
-	b.query.WriteString(q)
+func NewPostgreSQL() *Builder { return &Builder{pp: &postgres{}} }
+func NewMySQL() *Builder      { return &Builder{pp: &mysql{}} }
+
+func (b *Builder) Appendf(format string, args ...any) *Builder {
+	wargs := make([]any, len(args))
+	for i, arg := range args {
+		wargs[i] = &argument{value: arg, pp: b.pp}
+	}
+
+	fmt.Fprintf(&b.query, format+"\n", wargs...)
+
+	for _, warg := range wargs {
+		if arg := warg.(*argument); arg.forQuery {
+			b.args = append(b.args, arg.value)
+		}
+	}
+
 	return b
 }
 
-// Query that was build.
-func (b *Builder) Query() string { return b.query.String() }
+func (b *Builder) Build() (string, []any, error) {
+	return b.query.String(), b.args, nil
+}
 
-// Args passed to the query.
-func (b *Builder) Args() []interface{} { return b.args }
+// argument is a wrapper for Printf-style arguments that implements fmt.Formatter.
+type argument struct {
+	value    any
+	forQuery bool // is it a query argument?
+	pp       placeholderProvider
+}
 
-// Append the expression with prepended "\n"
-// Optional expressions are prepended with " ".
-func (b *Builder) Append(expr string, exprs ...string) {
-	b.query.WriteString("\n" + expr)
-	for _, expr := range exprs {
-		b.query.WriteByte(' ')
-		b.query.WriteString(expr)
+// Format implements the fmt.Formatter interface.
+func (a *argument) Format(s fmt.State, v rune) {
+	switch v {
+	case 's':
+		// just a normal string (a table, a column, etc.), write it as is.
+		fmt.Fprint(s, a.value)
+	case 'a':
+		// a query argument, mark it and write a placeholder.
+		a.forQuery = true
+		fmt.Fprint(s, a.pp.NextPlaceholder())
+	default:
+		panic(fmt.Sprintf("unsupported verb %c", v))
 	}
 }
 
-// Add the expression and the parameter and return its index in query.
-func (b *Builder) Add(expr string, v interface{}) string {
-	param := b.AddParam(v)
-	b.query.WriteString("\n" + expr + param)
-	return param
+type placeholderProvider interface {
+	NextPlaceholder() string
 }
 
-// AddParam add parameter and return its index in query.
-func (b *Builder) AddParam(v interface{}) string {
-	b.args = append(b.args, v)
-	return fmt.Sprintf("$%d", len(b.args))
+type postgres struct {
+	counter int
 }
 
-// AddParams add parameters and return its index in query.
-func (b *Builder) AddParams(v ...interface{}) string {
-	res := ""
-	for i, v := range v {
-		if i > 0 {
-			res += ", "
-		}
-		res += b.AddParam(v)
-	}
-	return res
+func (p *postgres) NextPlaceholder() string {
+	p.counter++
+	return "$" + strconv.Itoa(p.counter)
 }
+
+type mysql struct{}
+
+func (*mysql) NextPlaceholder() string { return "?" }

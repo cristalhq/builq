@@ -1,7 +1,6 @@
 package builq_test
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -10,32 +9,33 @@ import (
 )
 
 func ExampleQuery1() {
-	q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
-	q.Append("WHERE")
-	q.Append("active IS TRUE")
-	x := q.AddParam(42)
-	q.Append("AND user_id =", x, "OR invited_by =", x)
+	b := builq.NewPostgreSQL()
+	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
+	b.Appendf("WHERE")
+	b.Appendf("active IS TRUE")
+	b.Appendf("AND user_id = %a OR invited_by = %a", 42, 42)
+	query, _, _ := b.Build()
 
-	doQuery(q.Query(), q.Args()...)
-
+	fmt.Println(query)
 	// Output:
 	//
 	// SELECT foo, bar FROM users
 	// WHERE
 	// active IS TRUE
-	// AND user_id = $1 OR invited_by = $1
+	// AND user_id = $1 OR invited_by = $2
 }
 
 func ExampleQuery2() {
-	q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
-	q.Append("WHERE")
-	q.Add("active = ", true)
-	q.Add("AND user_id = ", 42)
-	q.Append("ORDER BY created_at")
-	q.Append("LIMIT 100;")
+	b := builq.NewPostgreSQL()
+	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
+	b.Appendf("WHERE")
+	b.Appendf("active = %a", true)
+	b.Appendf("AND user_id = %a", 42)
+	b.Appendf("ORDER BY created_at")
+	b.Appendf("LIMIT 100;")
+	query, _, _ := b.Build()
 
-	doQuery(q.Query(), q.Args()...)
-
+	fmt.Println(query)
 	// Output:
 	//
 	// SELECT foo, bar FROM users
@@ -47,13 +47,14 @@ func ExampleQuery2() {
 }
 
 func ExampleQuery3() {
-	q := builq.Newf("SELECT * FROM foo")
-	q.Append("WHERE active IS TRUE")
-	q.Append("AND user_id = " + q.AddParam(42))
-	q.Append("LIMIT 100;")
+	b := builq.NewPostgreSQL()
+	b.Appendf("SELECT * FROM foo")
+	b.Appendf("WHERE active IS TRUE")
+	b.Appendf("AND user_id = %a", 42)
+	b.Appendf("LIMIT 100;")
+	query, _, _ := b.Build()
 
-	doQuery(q.Query(), q.Args()...)
-
+	fmt.Println(query)
 	// Output:
 	//
 	// SELECT * FROM foo
@@ -63,27 +64,20 @@ func ExampleQuery3() {
 }
 
 func ExampleQuery4() {
-	args := []interface{}{42, time.Now(), "just testing"}
+	args := []any{42, time.Now(), "just testing"}
 
-	q := builq.Newf("INSERT (%s) INTO %s", getColumns(), "table")
-	q.Append("VALUES (" + q.AddParams(args...) + ");")
+	b := builq.NewMySQL()
+	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
+	b.Appendf("VALUES (%a, %a, %a);", args...) // TODO(junk1tm): should %a support slices?
+	query, _, _ := b.Build()
 
-	doQuery(q.Query(), q.Args()...)
-
+	fmt.Println(query)
 	// Output:
 	//
 	// INSERT (id, created_at, value) INTO table
-	// VALUES ($1, $2, $3);
+	// VALUES (?, ?, ?);
 }
 
 func getColumns() string {
 	return strings.Join([]string{"id", "created_at", "value"}, ", ")
-}
-
-func doQuery(query string, args ...interface{}) {
-	fmt.Println(query)
-	if false { // because we don't have db to test it
-		var db *sql.DB
-		db.Query(query, args...)
-	}
 }
