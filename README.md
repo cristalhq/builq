@@ -29,23 +29,23 @@ go get github.com/cristalhq/builq
 ## Example
 
 ```go
-q := builq.Newf("SELECT %s FROM %s", "foo, bar", "users")
-q.Append("WHERE")
-q.Add("active = ", true)
-q.Add("AND user_id = ", 42)
-q.Append("ORDER BY created_at")
-q.Append("LIMIT 100;")
+var b builq.Builder
+b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
+b.Appendf("WHERE active IS TRUE")
+b.Appendf("AND user_id = %a OR user = %a", 42, "root")
+query, args, _ := b.Build()
 
-doQuery(q.Query(), q.Args()...)
+fmt.Printf("query:\n%v", query)
+fmt.Printf("args:\n%v", args)
 
 // Output:
 //
+// query:
 // SELECT foo, bar FROM users
-// WHERE
-// active = $1
-// AND user_id = $2
-// ORDER BY created_at
-// LIMIT 100;
+// WHERE active IS TRUE
+// AND user_id = $1 OR user = $2
+// args:
+// [42 root]
 ```
 
 ## Documentation
