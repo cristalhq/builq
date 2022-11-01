@@ -33,7 +33,11 @@ var b builq.Builder
 b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 b.Appendf("WHERE active IS TRUE")
 b.Appendf("AND user_id = %a OR user = %a", 42, "root")
-query, args, _ := b.Build()
+
+query, args, err := b.Build()
+if err != nil {
+	panic(err)
+}
 
 fmt.Printf("query:\n%v", query)
 fmt.Printf("args:\n%v", args)
