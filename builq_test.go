@@ -9,24 +9,27 @@ import (
 )
 
 func ExampleQuery1() {
-	b := builq.NewPostgreSQL()
+	var b builq.Builder
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
-	b.Appendf("WHERE")
-	b.Appendf("active IS TRUE")
-	b.Appendf("AND user_id = %a OR invited_by = %a", 42, 42)
-	query, _, _ := b.Build()
+	b.Appendf("WHERE active IS TRUE")
+	b.Appendf("AND user_id = %a OR user = %a", 42, "root")
+	query, args, _ := b.Build()
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
 	// Output:
 	//
+	// query:
 	// SELECT foo, bar FROM users
-	// WHERE
-	// active IS TRUE
-	// AND user_id = $1 OR invited_by = $2
+	// WHERE active IS TRUE
+	// AND user_id = $1 OR user = $2
+	// args:
+	// [42 root]
 }
 
 func ExampleQuery2() {
-	b := builq.NewPostgreSQL()
+	b := builq.NewIterBuilder("$")
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Appendf("WHERE")
 	b.Appendf("active = %a", true)
@@ -47,7 +50,7 @@ func ExampleQuery2() {
 }
 
 func ExampleQuery3() {
-	b := builq.NewPostgreSQL()
+	var b builq.Builder
 	b.Appendf("SELECT * FROM foo")
 	b.Appendf("WHERE active IS TRUE")
 	b.Appendf("AND user_id = %a", 42)
@@ -66,7 +69,7 @@ func ExampleQuery3() {
 func ExampleQuery4() {
 	args := []any{42, time.Now(), "just testing"}
 
-	b := builq.NewMySQL()
+	b := builq.NewStaticBuilder("?")
 	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
 	b.Appendf("VALUES (%a, %a, %a);", args...) // TODO(junk1tm): should %a support slices?
 	query, _, _ := b.Build()

@@ -13,10 +13,23 @@ type Builder struct {
 	pp    placeholderProvider
 }
 
-func NewPostgreSQL() *Builder { return &Builder{pp: &postgres{}} }
-func NewMySQL() *Builder      { return &Builder{pp: &mysql{}} }
+func NewIterBuilder(placeholder string) Builder {
+	return Builder{
+		pp: &iterProvider{p: placeholder},
+	}
+}
+
+func NewStaticBuilder(placeholder string) Builder {
+	return Builder{
+		pp: &staticProvider{p: placeholder},
+	}
+}
 
 func (b *Builder) Appendf(format string, args ...any) *Builder {
+	if b.pp == nil {
+		b.pp = &iterProvider{p: "$"}
+	}
+
 	wargs := make([]any, len(args))
 	for i, arg := range args {
 		wargs[i] = &argument{value: arg, pp: b.pp}
@@ -53,25 +66,28 @@ func (a *argument) Format(s fmt.State, v rune) {
 	case 'a':
 		// a query argument, mark it and write a placeholder.
 		a.forQuery = true
-		fmt.Fprint(s, a.pp.NextPlaceholder())
+		fmt.Fprint(s, a.pp.Next())
 	default:
 		panic(fmt.Sprintf("unsupported verb %c", v))
 	}
 }
 
 type placeholderProvider interface {
-	NextPlaceholder() string
+	Next() string
 }
 
-type postgres struct {
-	counter int
+type iterProvider struct {
+	iter int
+	p    string
 }
 
-func (p *postgres) NextPlaceholder() string {
-	p.counter++
-	return "$" + strconv.Itoa(p.counter)
+func (ip *iterProvider) Next() string {
+	ip.iter++
+	return ip.p + strconv.Itoa(ip.iter)
 }
 
-type mysql struct{}
+type staticProvider struct {
+	p string
+}
 
-func (*mysql) NextPlaceholder() string { return "?" }
+func (sp *staticProvider) Next() string { return sp.p }
