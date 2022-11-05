@@ -57,10 +57,7 @@ func (b *Builder) Appendf(format string, args ...any) *Builder {
 }
 
 func (b *Builder) Build() (string, []any, error) {
-	if err := b.err; err != nil {
-		return "", nil, err
-	}
-	return b.query.String(), b.args, nil
+	return b.query.String(), b.args, b.err
 }
 
 // argument is a wrapper for Printf-style arguments that implements fmt.Formatter.
