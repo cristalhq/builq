@@ -12,18 +12,14 @@ var ErrDifferentPlaceholders = errors.New("builq: different placeholders must no
 
 // Builder for SQL queries.
 type Builder struct {
-	query        strings.Builder
-	args         []any
-	counter      int               // a counter for numbered placeholders ($1, $2, ...).
-	err          error             // the first error occurred while building the query.
-	placeholders map[rune]struct{} // a set of placeholders used to build the query.
+	query       strings.Builder
+	args        []any
+	err         error // the first error occurred while building the query.
+	counter     int   // a counter for numbered placeholders ($1, $2, ...).
+	placeholder rune  // a placeholder used to build the query.
 }
 
 func (b *Builder) Appendf(format string, args ...any) *Builder {
-	if b.placeholders == nil {
-		b.placeholders = make(map[rune]struct{})
-	}
-
 	// return earlier if there is already an error.
 	if b.err != nil {
 		return b
@@ -41,10 +37,17 @@ func (b *Builder) Appendf(format string, args ...any) *Builder {
 }
 
 func (b *Builder) Build() (string, []any, error) {
-	if len(b.placeholders) > 1 {
-		return "", nil, ErrDifferentPlaceholders
-	}
 	return b.query.String(), b.args, b.err
+}
+
+func (b *Builder) appendArg(arg any, placeholder rune) {
+	if b.placeholder == 0 {
+		b.placeholder = placeholder
+	}
+	if b.placeholder != placeholder {
+		b.err = ErrDifferentPlaceholders
+	}
+	b.args = append(b.args, arg)
 }
 
 // argument is a wrapper for arguments passed to [Builder.Appendf].
@@ -60,14 +63,12 @@ func (a *argument) Format(s fmt.State, v rune) {
 		fmt.Fprint(s, a.value)
 
 	case '$': // PostgreSQL
-		a.builder.args = append(a.builder.args, a.value)
-		a.builder.placeholders[v] = struct{}{}
+		a.builder.appendArg(a.value, v)
 		a.builder.counter++
 		fmt.Fprintf(s, "$%d", a.builder.counter)
 
 	case '?': // MySQL/SQLite
-		a.builder.args = append(a.builder.args, a.value)
-		a.builder.placeholders[v] = struct{}{}
+		a.builder.appendArg(a.value, v)
 		fmt.Fprint(s, "?")
 
 	default:
