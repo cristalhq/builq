@@ -1,6 +1,7 @@
 package builq_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/cristalhq/builq"
@@ -12,6 +13,14 @@ func TestBuilder(t *testing.T) {
 		b.Appendf("SELECT * FROM %v", "users")
 		if _, _, err := b.Build(); err == nil {
 			t.Errorf("want an error")
+		}
+	})
+
+	t.Run("different placeholders", func(t *testing.T) {
+		var b builq.Builder
+		b.Appendf("WHERE foo = %$ AND bar = %?", 1, 2)
+		if _, _, err := b.Build(); !errors.Is(err, builq.ErrDifferentPlaceholders) {
+			t.Errorf("got %v; want %v", err, builq.ErrDifferentPlaceholders)
 		}
 	})
 }

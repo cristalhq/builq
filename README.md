@@ -32,7 +32,7 @@ go get github.com/cristalhq/builq
 var b builq.Builder
 b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 b.Appendf("WHERE active IS TRUE")
-b.Appendf("AND user_id = %a OR user = %a", 42, "root")
+b.Appendf("AND user_id = %$ OR user = %$", 42, "root")
 
 query, args, err := b.Build()
 if err != nil {

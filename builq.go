@@ -1,57 +1,37 @@
 package builq
 
 import (
+	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
+// ErrDifferentPlaceholders is returned by [Builder.Build] when different
+// placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
+var ErrDifferentPlaceholders = errors.New("builq: different placeholders must not be used")
+
 // Builder for SQL queries.
 type Builder struct {
-	query strings.Builder
-	args  []any
-	pp    placeholderProvider
-	err   error // the first error occurred while building the query.
-}
-
-func NewIterBuilder(placeholder string) Builder {
-	return Builder{
-		pp: &iterProvider{p: placeholder},
-	}
-}
-
-func NewStaticBuilder(placeholder string) Builder {
-	return Builder{
-		pp: &staticProvider{p: placeholder},
-	}
+	query       strings.Builder
+	args        []any
+	err         error // the first error occurred while building the query.
+	counter     int   // a counter for numbered placeholders ($1, $2, ...).
+	placeholder rune  // a placeholder used to build the query.
 }
 
 func (b *Builder) Appendf(format string, args ...any) *Builder {
+	// return earlier if there is already an error.
 	if b.err != nil {
-		return b // return earlier if there is already an error.
-	}
-
-	if b.pp == nil {
-		b.pp = &iterProvider{p: "$"}
+		return b
 	}
 
 	wargs := make([]any, len(args))
 	for i, arg := range args {
-		wargs[i] = &argument{value: arg, pp: b.pp}
+		wargs[i] = &argument{value: arg, builder: b}
 	}
 
-	fmt.Fprintf(&b.query, format+"\n", wargs...)
-
-	for _, warg := range wargs {
-		arg := warg.(*argument)
-		if err := arg.err; err != nil {
-			b.err = err
-			break
-		}
-		if arg.forQuery {
-			b.args = append(b.args, arg.value)
-		}
-	}
+	// writing to strings.Builder always returns no error.
+	_, _ = fmt.Fprintf(&b.query, format+"\n", wargs...)
 
 	return b
 }
@@ -60,46 +40,38 @@ func (b *Builder) Build() (string, []any, error) {
 	return b.query.String(), b.args, b.err
 }
 
-// argument is a wrapper for Printf-style arguments that implements fmt.Formatter.
-type argument struct {
-	value    any
-	forQuery bool                // is it a query argument?
-	pp       placeholderProvider // the source of the next placeholder.
-	err      error               // an error occurred during the Format call.
+func (b *Builder) appendArg(arg any, placeholder rune) {
+	if b.placeholder == 0 {
+		b.placeholder = placeholder
+	}
+	if b.placeholder != placeholder {
+		b.err = ErrDifferentPlaceholders
+	}
+	b.args = append(b.args, arg)
 }
 
-// Format implements the fmt.Formatter interface.
+// argument is a wrapper for arguments passed to [Builder.Appendf].
+type argument struct {
+	value   any
+	builder *Builder
+}
+
+// Format implements the [fmt.Formatter] interface.
 func (a *argument) Format(s fmt.State, v rune) {
 	switch v {
-	case 's':
-		// just a normal string (a table, a column, etc.), write it as is.
+	case 's': // table/column/etc.
 		fmt.Fprint(s, a.value)
-	case 'a':
-		// a query argument, mark it and write a placeholder.
-		a.forQuery = true
-		fmt.Fprint(s, a.pp.Next())
+
+	case '$': // PostgreSQL
+		a.builder.appendArg(a.value, v)
+		a.builder.counter++
+		fmt.Fprintf(s, "$%d", a.builder.counter)
+
+	case '?': // MySQL/SQLite
+		a.builder.appendArg(a.value, v)
+		fmt.Fprint(s, "?")
+
 	default:
-		a.err = fmt.Errorf("builq: unsupported verb %c", v)
-		// panic(a.err) // this panic will be caught and written to s by the fmt code.
+		a.builder.err = fmt.Errorf("builq: unsupported verb %c", v)
 	}
 }
-
-type placeholderProvider interface {
-	Next() string
-}
-
-type iterProvider struct {
-	iter int
-	p    string
-}
-
-func (ip *iterProvider) Next() string {
-	ip.iter++
-	return ip.p + strconv.Itoa(ip.iter)
-}
-
-type staticProvider struct {
-	p string
-}
-
-func (sp *staticProvider) Next() string { return sp.p }

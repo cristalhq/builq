@@ -12,7 +12,7 @@ func ExampleQuery1() {
 	var b builq.Builder
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Appendf("WHERE active IS TRUE")
-	b.Appendf("AND user_id = %a OR user = %a", 42, "root")
+	b.Appendf("AND user_id = %$ OR user = %$", 42, "root")
 	query, args, _ := b.Build()
 
 	fmt.Printf("query:\n%v", query)
@@ -29,11 +29,11 @@ func ExampleQuery1() {
 }
 
 func ExampleQuery2() {
-	b := builq.NewIterBuilder("$")
+	var b builq.Builder
 	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Appendf("WHERE")
-	b.Appendf("active = %a", true)
-	b.Appendf("AND user_id = %a", 42)
+	b.Appendf("active = %$", true)
+	b.Appendf("AND user_id = %$", 42)
 	b.Appendf("ORDER BY created_at")
 	b.Appendf("LIMIT 100;")
 	query, _, _ := b.Build()
@@ -53,7 +53,7 @@ func ExampleQuery3() {
 	var b builq.Builder
 	b.Appendf("SELECT * FROM foo")
 	b.Appendf("WHERE active IS TRUE")
-	b.Appendf("AND user_id = %a", 42)
+	b.Appendf("AND user_id = %$", 42)
 	b.Appendf("LIMIT 100;")
 	query, _, _ := b.Build()
 
@@ -69,9 +69,9 @@ func ExampleQuery3() {
 func ExampleQuery4() {
 	args := []any{42, time.Now(), "just testing"}
 
-	b := builq.NewStaticBuilder("?")
+	var b builq.Builder
 	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
-	b.Appendf("VALUES (%a, %a, %a);", args...) // TODO(junk1tm): should %a support slices?
+	b.Appendf("VALUES (%?, %?, %?);", args...) // TODO(junk1tm): should %a support slices?
 	query, _, _ := b.Build()
 
 	fmt.Println(query)
