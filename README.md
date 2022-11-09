@@ -14,13 +14,13 @@ Often simple string representing SQL query is what we are looking for. But the p
 
 ## Features
 
-* Simple.
+* Simple and easy.
 * Tested.
 * Dependency-free.
 
 ## Install
 
-Go version 1.17+
+Go version 1.19+
 
 ```
 go get github.com/cristalhq/builq
@@ -29,10 +29,12 @@ go get github.com/cristalhq/builq
 ## Example
 
 ```go
+cols := builq.Columns{"foo, bar"}
+
 var b builq.Builder
-b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
-b.Appendf("WHERE active IS TRUE")
-b.Appendf("AND user_id = %$ OR user = %$", 42, "root")
+b.Addf("SELECT %s FROM %s", cols, "users").
+	Addf("WHERE active IS TRUE").
+	Addf("AND user_id = %$ OR user = %$", 42, "root")
 
 query, args, err := b.Build()
 if err != nil {

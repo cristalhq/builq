@@ -2,18 +2,23 @@ package builq_test
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cristalhq/builq"
 )
 
 func ExampleQuery1() {
+	cols := builq.Columns{"foo, bar"}
+
 	var b builq.Builder
-	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
-	b.Appendf("WHERE active IS TRUE")
-	b.Appendf("AND user_id = %$ OR user = %$", 42, "root")
-	query, args, _ := b.Build()
+	b.Addf("SELECT %s FROM %s", cols, "users").
+		Addf("WHERE active IS TRUE").
+		Addf("AND user_id = %$ OR user = %$", 42, "root")
+
+	query, args, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -30,15 +35,20 @@ func ExampleQuery1() {
 
 func ExampleQuery2() {
 	var b builq.Builder
-	b.Appendf("SELECT %s FROM %s", "foo, bar", "users")
-	b.Appendf("WHERE")
-	b.Appendf("active = %$", true)
-	b.Appendf("AND user_id = %$", 42)
-	b.Appendf("ORDER BY created_at")
-	b.Appendf("LIMIT 100;")
-	query, _, _ := b.Build()
+	b.Addf("SELECT %s FROM %s", "foo, bar", "users")
+	b.Addf("WHERE")
+	b.Addf("active = %$", true)
+	b.Addf("AND user_id = %$", 42)
+	b.Addf("ORDER BY created_at")
+	b.Addf("LIMIT 100;")
+
+	query, _, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println(query)
+
 	// Output:
 	//
 	// SELECT foo, bar FROM users
@@ -51,13 +61,18 @@ func ExampleQuery2() {
 
 func ExampleQuery3() {
 	var b builq.Builder
-	b.Appendf("SELECT * FROM foo")
-	b.Appendf("WHERE active IS TRUE")
-	b.Appendf("AND user_id = %$", 42)
-	b.Appendf("LIMIT 100;")
-	query, _, _ := b.Build()
+	b.Addf("SELECT * FROM foo").
+		Addf("WHERE active IS TRUE").
+		Addf("AND user_id = %$", 42).
+		Addf("LIMIT 100;")
+
+	query, _, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println(query)
+
 	// Output:
 	//
 	// SELECT * FROM foo
@@ -66,21 +81,43 @@ func ExampleQuery3() {
 	// LIMIT 100;
 }
 
-func ExampleQuery4() {
+func ExampleColumns() {
+	columns := builq.Columns{"id", "created_at", "value"}
 	args := []any{42, time.Now(), "just testing"}
 
 	var b builq.Builder
-	b.Appendf("INSERT (%s) INTO %s", getColumns(), "table")
-	b.Appendf("VALUES (%?, %?, %?);", args...) // TODO(junk1tm): should %a support slices?
-	query, _, _ := b.Build()
+	b.Addf("INSERT (%s) INTO %s", columns, "table")
+	b.Addf("VALUES (%?, %?, %?);", args...) // TODO(junk1tm): should %a support slices?
+
+	query, _, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println(query)
+
 	// Output:
 	//
 	// INSERT (id, created_at, value) INTO table
 	// VALUES (?, ?, ?);
 }
 
-func getColumns() string {
-	return strings.Join([]string{"id", "created_at", "value"}, ", ")
+func ExampleSlice() {
+	args := []any{42, true, "str"}
+
+	var b builq.Builder
+	b.Addf("INSERT (id, flag, name) INTO table")
+	b.Addf("VALUES (%$);", args)
+	query, _, err := b.Build()
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	fmt.Println(query)
+
+	// Output:
+	//
+	// INSERT (id, flag, name) INTO table
+	// VALUES ($1);
 }
