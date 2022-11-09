@@ -64,10 +64,13 @@ func (b *Builder) writeArgs(s fmt.State, placeholder rune, arg any, isMulti bool
 
 		b.appendArg(arg, placeholder)
 
-		if placeholder == '$' { // PostgreSQL
+		switch placeholder {
+		case '$': // PostgreSQL
 			fmt.Fprintf(s, "$%d", b.counter)
-		} else { // MySQL/SQLite
+		case '?': // MySQL/SQLite
 			fmt.Fprint(s, "?")
+		default:
+			panic("unreachable")
 		}
 	}
 }
