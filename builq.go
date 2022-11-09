@@ -6,9 +6,16 @@ import (
 	"strings"
 )
 
-// ErrDifferentPlaceholders is returned by [Builder.Build] when different
+// ErrMixedPlaceholders is returned by [Builder.Build] when different
 // placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
-var ErrDifferentPlaceholders = errors.New("builq: different placeholders must not be used")
+var ErrMixedPlaceholders = errors.New("mixed placeholders must not be used")
+
+// Columns wrapper for your tables.
+type Columns []string
+
+func (c Columns) String() string {
+	return strings.Join(c, ", ")
+}
 
 // Builder for SQL queries.
 type Builder struct {
@@ -19,8 +26,8 @@ type Builder struct {
 	placeholder rune  // a placeholder used to build the query.
 }
 
-func (b *Builder) Appendf(format string, args ...any) *Builder {
-	// return earlier if there is already an error.
+// Addf formats according to a format specifier, writes to query and appends args.
+func (b *Builder) Addf(format string, args ...any) *Builder {
 	if b.err != nil {
 		return b
 	}
@@ -30,8 +37,7 @@ func (b *Builder) Appendf(format string, args ...any) *Builder {
 		wargs[i] = &argument{value: arg, builder: b}
 	}
 
-	// writing to strings.Builder always returns no error.
-	_, _ = fmt.Fprintf(&b.query, format+"\n", wargs...)
+	fmt.Fprintf(&b.query, format+"\n", wargs...)
 
 	return b
 }
@@ -45,12 +51,12 @@ func (b *Builder) appendArg(arg any, placeholder rune) {
 		b.placeholder = placeholder
 	}
 	if b.placeholder != placeholder {
-		b.err = ErrDifferentPlaceholders
+		b.err = ErrMixedPlaceholders
 	}
 	b.args = append(b.args, arg)
 }
 
-// argument is a wrapper for arguments passed to [Builder.Appendf].
+// argument is a wrapper for arguments passed to Builder.
 type argument struct {
 	value   any
 	builder *Builder
@@ -59,7 +65,7 @@ type argument struct {
 // Format implements the [fmt.Formatter] interface.
 func (a *argument) Format(s fmt.State, v rune) {
 	switch v {
-	case 's': // table/column/etc.
+	case 's': // just a string
 		fmt.Fprint(s, a.value)
 
 	case '$': // PostgreSQL
@@ -72,6 +78,6 @@ func (a *argument) Format(s fmt.State, v rune) {
 		fmt.Fprint(s, "?")
 
 	default:
-		a.builder.err = fmt.Errorf("builq: unsupported verb %c", v)
+		a.builder.err = fmt.Errorf("unsupported verb %c", v)
 	}
 }
