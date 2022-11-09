@@ -7,9 +7,13 @@ import (
 	"strings"
 )
 
-// ErrMixedPlaceholders is returned by [Builder.Build] when different
-// placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
-var ErrMixedPlaceholders = errors.New("mixed placeholders must not be used")
+var (
+	// errMixedPlaceholders is returned by [Builder.Build] when different
+	// placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
+	errMixedPlaceholders = errors.New("mixed placeholders must not be used")
+
+	errNonSliceArgument = errors.New("cannot expand non-slice argument")
+)
 
 // Columns wrapper for your tables.
 type Columns []string
@@ -47,14 +51,56 @@ func (b *Builder) Build() (string, []any, error) {
 	return b.query.String(), b.args, b.err
 }
 
+func (b *Builder) writeArgs(s fmt.State, placeholder rune, arg any, isMulti bool) {
+	args := []any{arg}
+	if isMulti {
+		args = b.asSlice(arg)
+	}
+
+	for i, arg := range args {
+		if i > 0 {
+			fmt.Fprint(s, ", ")
+		}
+
+		b.appendArg(arg, placeholder)
+
+		switch placeholder {
+		case '$': // PostgreSQL
+			fmt.Fprintf(s, "$%d", b.counter)
+		case '?': // MySQL/SQLite
+			fmt.Fprint(s, "?")
+		default:
+			panic("unreachable")
+		}
+	}
+}
+
 func (b *Builder) appendArg(arg any, placeholder rune) {
+	b.counter++
 	if b.placeholder == 0 {
 		b.placeholder = placeholder
 	}
 	if b.placeholder != placeholder {
-		b.err = ErrMixedPlaceholders
+		b.err = errMixedPlaceholders
 	}
 	b.args = append(b.args, arg)
+}
+
+func (b *Builder) asSlice(v any) []any {
+	value := reflect.ValueOf(v)
+
+	if value.Kind() != reflect.Slice {
+		if b.err == nil {
+			b.err = errNonSliceArgument
+		}
+		return nil
+	}
+
+	res := make([]any, value.Len())
+	for i := 0; i < value.Len(); i++ {
+		res[i] = value.Index(i).Interface()
+	}
+	return res
 }
 
 // argument is a wrapper for arguments passed to Builder.
@@ -69,55 +115,11 @@ func (a *argument) Format(s fmt.State, v rune) {
 	case 's': // just a string
 		fmt.Fprint(s, a.value)
 
-	case '$': // PostgreSQL
-		if !s.Flag('+') {
-			a.builder.appendArg(a.value, v)
-			a.builder.counter++
-			fmt.Fprintf(s, "$%d", a.builder.counter)
-			return
-		}
-
-		value, ok := a.trySlice(a.value)
-		if ok {
-			for i := 0; i < value.Len(); i++ {
-				if i > 0 {
-					fmt.Fprint(s, ", ")
-				}
-				a.builder.appendArg(value.Index(i).Interface(), v)
-				a.builder.counter++
-				fmt.Fprintf(s, "$%d", a.builder.counter)
-			}
-		}
-
-	case '?': // MySQL/SQLite
-		if !s.Flag('+') {
-			a.builder.appendArg(a.value, v)
-			fmt.Fprint(s, "?")
-			return
-		}
-
-		value, ok := a.trySlice(a.value)
-		if ok {
-			for i := 0; i < value.Len(); i++ {
-				if i > 0 {
-					fmt.Fprint(s, ", ")
-				}
-				a.builder.appendArg(value.Index(i).Interface(), v)
-				fmt.Fprint(s, "?")
-			}
-		}
+	case '$', '?': // PostgreSQL or MySQL/SQLite
+		isMulti := s.Flag('+')
+		a.builder.writeArgs(s, v, a.value, isMulti)
 
 	default:
 		a.builder.err = fmt.Errorf("unsupported verb %c", v)
 	}
-}
-
-func (a *argument) trySlice(v any) (reflect.Value, bool) {
-	value := reflect.ValueOf(v)
-	isSlice := value.Kind() == reflect.Slice
-
-	if !isSlice && a.builder.err == nil {
-		a.builder.err = errors.New("cannot expand non-slice argument")
-	}
-	return value, isSlice
 }
