@@ -3,6 +3,7 @@ package builq
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -69,15 +70,54 @@ func (a *argument) Format(s fmt.State, v rune) {
 		fmt.Fprint(s, a.value)
 
 	case '$': // PostgreSQL
-		a.builder.appendArg(a.value, v)
-		a.builder.counter++
-		fmt.Fprintf(s, "$%d", a.builder.counter)
+		if !s.Flag('+') {
+			a.builder.appendArg(a.value, v)
+			a.builder.counter++
+			fmt.Fprintf(s, "$%d", a.builder.counter)
+			return
+		}
+
+		value, ok := a.trySlice(a.value)
+		if ok {
+			for i := 0; i < value.Len(); i++ {
+				if i > 0 {
+					fmt.Fprint(s, ", ")
+				}
+				a.builder.appendArg(value.Index(i).Interface(), v)
+				a.builder.counter++
+				fmt.Fprintf(s, "$%d", a.builder.counter)
+			}
+		}
 
 	case '?': // MySQL/SQLite
-		a.builder.appendArg(a.value, v)
-		fmt.Fprint(s, "?")
+		if !s.Flag('+') {
+			a.builder.appendArg(a.value, v)
+			fmt.Fprint(s, "?")
+			return
+		}
+
+		value, ok := a.trySlice(a.value)
+		if ok {
+			for i := 0; i < value.Len(); i++ {
+				if i > 0 {
+					fmt.Fprint(s, ", ")
+				}
+				a.builder.appendArg(value.Index(i).Interface(), v)
+				fmt.Fprint(s, "?")
+			}
+		}
 
 	default:
 		a.builder.err = fmt.Errorf("unsupported verb %c", v)
 	}
+}
+
+func (a *argument) trySlice(v any) (reflect.Value, bool) {
+	value := reflect.ValueOf(v)
+	isSlice := value.Kind() == reflect.Slice
+
+	if !isSlice && a.builder.err == nil {
+		a.builder.err = errors.New("cannot expand non-slice argument")
+	}
+	return value, isSlice
 }

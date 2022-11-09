@@ -107,7 +107,7 @@ func ExampleSlice() {
 
 	var b builq.Builder
 	b.Addf("INSERT (id, flag, name) INTO table")
-	b.Addf("VALUES (%$);", args)
+	b.Addf("VALUES (%+$);", args)
 	query, _, err := b.Build()
 
 	if err != nil {
@@ -119,5 +119,28 @@ func ExampleSlice() {
 	// Output:
 	//
 	// INSERT (id, flag, name) INTO table
-	// VALUES ($1);
+	// VALUES ($1, $2, $3);
+}
+
+func ExampleInsertReturn() {
+	cols := builq.Columns{"id", "is_active", "name"}
+	args := []any{true, "str"}
+
+	var b builq.Builder
+	b.Addf("INSERT (%s) INTO table", cols[1:]) // skip id column
+	b.Addf("VALUES (%+$)", args)
+	b.Addf("RETURNING %s;", cols)
+	query, _, err := b.Build()
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	fmt.Println(query)
+
+	// Output:
+	//
+	// INSERT (is_active, name) INTO table
+	// VALUES ($1, $2)
+	// RETURNING id, is_active, name;
 }
