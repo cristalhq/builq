@@ -102,7 +102,7 @@ func ExampleColumns() {
 	// VALUES (?, ?, ?);
 }
 
-func ExampleSlice() {
+func ExampleSlicePostgres() {
 	args := []any{42, true, "str"}
 
 	var b builq.Builder
@@ -120,6 +120,26 @@ func ExampleSlice() {
 	//
 	// INSERT (id, flag, name) INTO table
 	// VALUES ($1, $2, $3);
+}
+
+func ExampleSliceMySQL() {
+	args := []any{42, true, "str"}
+
+	var b builq.Builder
+	b.Addf("INSERT (id, flag, name) INTO table")
+	b.Addf("VALUES (%+?);", args)
+	query, _, err := b.Build()
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	fmt.Println(query)
+
+	// Output:
+	//
+	// INSERT (id, flag, name) INTO table
+	// VALUES (?, ?, ?);
 }
 
 func ExampleInsertReturn() {
