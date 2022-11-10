@@ -26,13 +26,6 @@ var (
 	errNonSliceArgument = errors.New("cannot expand non-slice argument")
 )
 
-// Columns wrapper for your tables.
-type Columns []string
-
-func (c Columns) String() string {
-	return strings.Join(c, ", ")
-}
-
 // Builder for SQL queries.
 type Builder struct {
 	query       strings.Builder
