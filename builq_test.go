@@ -36,3 +36,17 @@ func TestBuilder(t *testing.T) {
 		}
 	})
 }
+
+func TestColumns(t *testing.T) {
+	cols := Columns{"id", "created_at", "whatever"}
+	want := "id, created_at, whatever"
+	wantP := "tbl.id, tbl.created_at, tbl.whatever"
+
+	if have := cols.String(); have != want {
+		t.Errorf("\nhave: %v\nwant: %v", have, want)
+	}
+
+	if have := cols.Prefixed("tbl."); have != wantP {
+		t.Errorf("\nhave: %v\nwant: %v", have, wantP)
+	}
+}

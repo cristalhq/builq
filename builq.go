@@ -7,6 +7,24 @@ import (
 	"strings"
 )
 
+type SafeString string
+
+func (s SafeString) String() string {
+	return string(s)
+}
+
+type Identifier []string
+
+func (ident Identifier) String() string {
+	parts := make([]string, len(ident))
+	for i := range ident {
+		// remove \x00 if any
+		s := strings.ReplaceAll(ident[i], string([]byte{0}), "")
+		parts[i] = `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
+	}
+	return strings.Join(parts, ".")
+}
+
 // Columns wrapper for your tables.
 type Columns []string
 
@@ -114,16 +132,21 @@ type argument struct {
 }
 
 // Format implements the [fmt.Formatter] interface.
-func (a *argument) Format(s fmt.State, v rune) {
-	switch v {
+func (a *argument) Format(s fmt.State, verb rune) {
+	switch verb {
 	case 's': // just a string
-		fmt.Fprint(s, a.value)
+		switch v := a.value.(type) {
+		case SafeString, Identifier, Columns:
+			fmt.Fprint(s, v)
+		default:
+			a.builder.err = fmt.Errorf("unsupported type %T", v)
+		}
 
 	case '$', '?': // PostgreSQL or MySQL/SQLite
 		isMulti := s.Flag('+')
-		a.builder.writeArgs(s, v, a.value, isMulti)
+		a.builder.writeArgs(s, verb, a.value, isMulti)
 
 	default:
-		a.builder.err = fmt.Errorf("unsupported verb %c", v)
+		a.builder.err = fmt.Errorf("unsupported verb %c", verb)
 	}
 }
