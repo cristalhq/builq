@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+// Columns wrapper for your tables.
+type Columns []string
+
+func (c Columns) String() string {
+	return strings.Join(c, ", ")
+}
+
+func (c Columns) Prefixed(p string) string {
+	return p + strings.Join(c, ", "+p)
+}
+
 var (
 	// errMixedPlaceholders is returned by [Builder.Build] when different
 	// placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
