@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleQuery1() {
-	table := builq.Identifier{"users"}
+	table := builq.String("users")
 	cols := builq.Columns{"foo, bar"}
 
 	var b builq.Builder
@@ -27,7 +27,7 @@ func ExampleQuery1() {
 	// Output:
 	//
 	// query:
-	// SELECT foo, bar FROM "users"
+	// SELECT foo, bar FROM users
 	// WHERE active IS TRUE
 	// AND user_id = $1 OR user = $2
 	// args:
@@ -36,7 +36,7 @@ func ExampleQuery1() {
 
 func ExampleQuery2() {
 	var b builq.Builder
-	b.Addf("SELECT %s FROM %s", builq.SafeString("foo, bar"), builq.SafeString("users"))
+	b.Addf("SELECT %s FROM %s", builq.String("foo, bar"), builq.String("users"))
 	b.Addf("WHERE")
 	b.Addf("active = %$", true)
 	b.Addf("AND user_id = %$", 42)
@@ -87,7 +87,7 @@ func ExampleColumns() {
 	args := []any{42, time.Now(), "just testing"}
 
 	var b builq.Builder
-	b.Addf("INSERT (%s) INTO %s", columns, builq.SafeString("table"))
+	b.Addf("INSERT (%s) INTO %s", columns, builq.String("table"))
 	b.Addf("VALUES (%?, %?, %?);", args...) // TODO(junk1tm): should %a support slices?
 
 	query, _, err := b.Build()
