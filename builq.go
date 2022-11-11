@@ -55,7 +55,19 @@ func (b *Builder) Build() (string, []any, error) {
 	return b.query.String(), b.args, b.err
 }
 
-func (b *Builder) writeArgs(s fmt.State, placeholder rune, arg any, isMulti bool) {
+func (b *Builder) writeBatchArgs(s fmt.State, verb rune, arg any) {
+	args := b.asSlice(arg)
+	for i, arg := range args {
+		if i > 0 {
+			fmt.Fprint(s, ", ")
+		}
+		fmt.Fprint(s, "(")
+		b.writeArgs(s, verb, arg, true)
+		fmt.Fprint(s, ")")
+	}
+}
+
+func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 	args := []any{arg}
 	if isMulti {
 		args = b.asSlice(arg)
@@ -66,9 +78,9 @@ func (b *Builder) writeArgs(s fmt.State, placeholder rune, arg any, isMulti bool
 			fmt.Fprint(s, ", ")
 		}
 
-		b.appendArg(arg, placeholder)
+		b.appendArg(arg, verb)
 
-		switch placeholder {
+		switch verb {
 		case '$': // PostgreSQL
 			fmt.Fprintf(s, "$%d", b.counter)
 		case '?': // MySQL/SQLite
@@ -120,6 +132,10 @@ func (a *argument) Format(s fmt.State, v rune) {
 		fmt.Fprint(s, a.value)
 
 	case '$', '?': // PostgreSQL or MySQL/SQLite
+		if s.Flag('#') {
+			a.builder.writeBatchArgs(s, v, a.value)
+			return
+		}
 		isMulti := s.Flag('+')
 		a.builder.writeArgs(s, v, a.value, isMulti)
 

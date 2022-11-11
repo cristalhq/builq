@@ -2,7 +2,6 @@ package builq_test
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/cristalhq/builq"
 )
@@ -24,7 +23,6 @@ func ExampleQuery1() {
 	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
 	// query:
 	// SELECT foo, bar FROM users
 	// WHERE active IS TRUE
@@ -42,21 +40,24 @@ func ExampleQuery2() {
 	b.Addf("ORDER BY created_at")
 	b.Addf("LIMIT 100;")
 
-	query, _, err := b.Build()
+	query, args, err := b.Build()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
+	// query:
 	// SELECT foo, bar FROM users
 	// WHERE
 	// active = $1
 	// AND user_id = $2
 	// ORDER BY created_at
 	// LIMIT 100;
+	// args:
+	// [true 42]
 }
 
 func ExampleQuery3() {
@@ -66,101 +67,194 @@ func ExampleQuery3() {
 		Addf("AND user_id = %$", 42).
 		Addf("LIMIT 100;")
 
-	query, _, err := b.Build()
+	query, args, err := b.Build()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
+	// query:
 	// SELECT * FROM foo
 	// WHERE active IS TRUE
 	// AND user_id = $1
 	// LIMIT 100;
+	// args:
+	// [42]
 }
 
 func ExampleColumns() {
 	columns := builq.Columns{"id", "created_at", "value"}
-	args := []any{42, time.Now(), "just testing"}
+	params := []any{42, "right now", "just testing"}
 
 	var b builq.Builder
-	b.Addf("INSERT (%s) INTO %s", columns, "table")
-	b.Addf("VALUES (%?, %?, %?);", args...) // TODO(junk1tm): should %a support slices?
+	b.Addf("INSERT INTO %s (%s)", "table", columns)
+	b.Addf("VALUES (%?, %?, %?);", params...) // TODO(junk1tm): should %a support slices?
 
-	query, _, err := b.Build()
+	query, args, err := b.Build()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
-	// INSERT (id, created_at, value) INTO table
+	// query:
+	// INSERT INTO table (id, created_at, value)
 	// VALUES (?, ?, ?);
+	// args:
+	// [42 right now just testing]
 }
 
 func ExampleSlicePostgres() {
-	args := []any{42, true, "str"}
+	params := []any{42, true, "str"}
 
 	var b builq.Builder
-	b.Addf("INSERT (id, flag, name) INTO table")
-	b.Addf("VALUES (%+$);", args)
-	query, _, err := b.Build()
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES (%+$);", params)
+	query, args, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
-	// INSERT (id, flag, name) INTO table
+	// query:
+	// INSERT INTO table (id, flag, name)
 	// VALUES ($1, $2, $3);
+	// args:
+	// [42 true str]
 }
 
 func ExampleSliceMySQL() {
-	args := []any{42, true, "str"}
+	params := []any{42, true, "str"}
 
 	var b builq.Builder
-	b.Addf("INSERT (id, flag, name) INTO table")
-	b.Addf("VALUES (%+?);", args)
-	query, _, err := b.Build()
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES (%+?);", params)
+	query, args, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
-	// INSERT (id, flag, name) INTO table
+	// query:
+	// INSERT INTO table (id, flag, name)
 	// VALUES (?, ?, ?);
+	// args:
+	// [42 true str]
 }
 
 func ExampleInsertReturn() {
 	cols := builq.Columns{"id", "is_active", "name"}
-	args := []any{true, "str"}
+	params := []any{true, "str"}
 
 	var b builq.Builder
-	b.Addf("INSERT (%s) INTO table", cols[1:]) // skip id column
-	b.Addf("VALUES (%+$)", args)
+	b.Addf("INSERT INTO table (%s)", cols[1:]) // skip id column
+	b.Addf("VALUES (%+$)", params)
 	b.Addf("RETURNING %s;", cols)
-	query, _, err := b.Build()
+	query, args, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
-	fmt.Println(query)
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
 
 	// Output:
-	//
-	// INSERT (is_active, name) INTO table
+	// query:
+	// INSERT INTO table (is_active, name)
 	// VALUES ($1, $2)
 	// RETURNING id, is_active, name;
+	// args:
+	// [true str]
+}
+
+func ExampleBatchPostgres() {
+	params := [][]any{
+		{42, true, "str"},
+		{69, true, "noice"},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES %#$;", params)
+	query, args, err := b.Build()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, flag, name)
+	// VALUES ($1, $2, $3), ($4, $5, $6);
+	// args:
+	// [42 true str 69 true noice]
+}
+
+func ExampleBatchMySQL() {
+	params := [][]any{
+		{42, true, "str"},
+		{69, true, "noice"},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES %#?;", params)
+	query, args, err := b.Build()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, flag, name)
+	// VALUES (?, ?, ?), (?, ?, ?);
+	// args:
+	// [42 true str 69 true noice]
+}
+
+func ExampleSliceInBatch() {
+	params := [][]any{
+		{42, []any{1, 2, 3}},
+		{69, []any{4, 5, 6}},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES %#?;", params)
+	query, args, err := b.Build()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, flag, name)
+	// VALUES (?, ?), (?, ?);
+	// args:
+	// [42 [1 2 3] 69 [4 5 6]]
 }
