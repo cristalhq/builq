@@ -111,7 +111,7 @@ func ExampleSlicePostgres() {
 	query, _, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
 	fmt.Println(query)
@@ -131,7 +131,7 @@ func ExampleSliceMySQL() {
 	query, _, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
 	fmt.Println(query)
@@ -153,7 +153,7 @@ func ExampleInsertReturn() {
 	query, _, err := b.Build()
 
 	if err != nil {
-		println(err.Error())
+		panic(err)
 	}
 
 	fmt.Println(query)
@@ -163,4 +163,50 @@ func ExampleInsertReturn() {
 	// INSERT (is_active, name) INTO table
 	// VALUES ($1, $2)
 	// RETURNING id, is_active, name;
+}
+
+func ExampleBatchPostgres() {
+	args := [][]any{
+		{42, true, "str"},
+		{69, true, "noice"},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT (id, flag, name) INTO table")
+	b.Addf("VALUES %#$;", args)
+	query, _, err := b.Build()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(query)
+
+	// Output:
+	//
+	// INSERT (id, flag, name) INTO table
+	// VALUES ($1, $2, $3), ($4, $5, $6);
+}
+
+func ExampleBatchMySQL() {
+	args := [][]any{
+		{42, true, "str"},
+		{69, true, "noice"},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT (id, flag, name) INTO table")
+	b.Addf("VALUES %#?;", args)
+	query, _, err := b.Build()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(query)
+
+	// Output:
+	//
+	// INSERT (id, flag, name) INTO table
+	// VALUES (?, ?, ?), (?, ?, ?);
 }
