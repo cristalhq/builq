@@ -35,4 +35,13 @@ func TestBuilder(t *testing.T) {
 			t.Errorf("\nhave: %v\nwant: %v", err, errNonSliceArgument)
 		}
 	})
+
+	t.Run("batch placeholder for non-slice args", func(t *testing.T) {
+		var b Builder
+		b.Addf("WHERE foo = %#$", 123)
+
+		if _, _, err := b.Build(); !errors.Is(err, errNonSliceArgument) {
+			t.Errorf("\nhave: %v\nwant: %v", err, errNonSliceArgument)
+		}
+	})
 }
