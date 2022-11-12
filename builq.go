@@ -125,7 +125,7 @@ var (
 
 	// errNonSliceArgument is returned when a non-slice argument is provided
 	// with either `+` or `#` modifier.
-	errNonSliceArgument = errors.New("non-slice arguments must no be used with slice modifiers")
+	errNonSliceArgument = errors.New("non-slice arguments must not be used with slice modifiers")
 )
 
 // argument is a wrapper for arguments passed to Builder.

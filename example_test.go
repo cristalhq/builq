@@ -194,7 +194,7 @@ func ExampleBatchPostgres() {
 func ExampleBatchMySQL() {
 	params := [][]any{
 		{42, true, "str"},
-		{69, true, "noise"},
+		{69, true, "noice"},
 	}
 
 	var b builq.Builder
@@ -212,7 +212,7 @@ func ExampleBatchMySQL() {
 	// INSERT INTO table (id, flag, name)
 	// VALUES (?, ?, ?), (?, ?, ?);
 	// args:
-	// [42 true str 69 true noise]
+	// [42 true str 69 true noice]
 }
 
 func ExampleSliceInBatch() {
