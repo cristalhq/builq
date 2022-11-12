@@ -15,9 +15,7 @@ func ExampleQuery1() {
 		Addf("AND user_id = %$ OR user = %$", 42, "root")
 
 	query, args, err := b.Build()
-	if err != nil {
-		panic(err)
-	}
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -41,9 +39,7 @@ func ExampleQuery2() {
 	b.Addf("LIMIT 100;")
 
 	query, args, err := b.Build()
-	if err != nil {
-		panic(err)
-	}
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -68,9 +64,7 @@ func ExampleQuery3() {
 		Addf("LIMIT 100;")
 
 	query, args, err := b.Build()
-	if err != nil {
-		panic(err)
-	}
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -91,12 +85,10 @@ func ExampleColumns() {
 
 	var b builq.Builder
 	b.Addf("INSERT INTO %s (%s)", "table", columns)
-	b.Addf("VALUES (%?, %?, %?);", params...) // TODO(junk1tm): should %a support slices?
+	b.Addf("VALUES (%?, %?, %?);", params...)
 
 	query, args, err := b.Build()
-	if err != nil {
-		panic(err)
-	}
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -115,11 +107,9 @@ func ExampleSlicePostgres() {
 	var b builq.Builder
 	b.Addf("INSERT INTO table (id, flag, name)")
 	b.Addf("VALUES (%+$);", params)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -138,11 +128,9 @@ func ExampleSliceMySQL() {
 	var b builq.Builder
 	b.Addf("INSERT INTO table (id, flag, name)")
 	b.Addf("VALUES (%+?);", params)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -163,11 +151,9 @@ func ExampleInsertReturn() {
 	b.Addf("INSERT INTO table (%s)", cols[1:]) // skip id column
 	b.Addf("VALUES (%+$)", params)
 	b.Addf("RETURNING %s;", cols)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -190,11 +176,9 @@ func ExampleBatchPostgres() {
 	var b builq.Builder
 	b.Addf("INSERT INTO table (id, flag, name)")
 	b.Addf("VALUES %#$;", params)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -216,11 +200,9 @@ func ExampleBatchMySQL() {
 	var b builq.Builder
 	b.Addf("INSERT INTO table (id, flag, name)")
 	b.Addf("VALUES %#?;", params)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -242,11 +224,9 @@ func ExampleSliceInBatch() {
 	var b builq.Builder
 	b.Addf("INSERT INTO table (id, flag, name)")
 	b.Addf("VALUES %#?;", params)
-	query, args, err := b.Build()
 
-	if err != nil {
-		panic(err)
-	}
+	query, args, err := b.Build()
+	panicIf(err)
 
 	fmt.Printf("query:\n%v", query)
 	fmt.Printf("args:\n%v", args)
@@ -257,4 +237,10 @@ func ExampleSliceInBatch() {
 	// VALUES (?, ?), (?, ?);
 	// args:
 	// [42 [1 2 3] 69 [4 5 6]]
+}
+
+func panicIf(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

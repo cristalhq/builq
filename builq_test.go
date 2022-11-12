@@ -2,46 +2,90 @@ package builq
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
+func TestColumns(t *testing.T) {
+	cols := Columns{"foo", "bar", "baz"}
+
+	t.Run("string", func(t *testing.T) {
+		const want = "foo, bar, baz"
+		if got := cols.String(); got != want {
+			t.Errorf("got %q; want %q", got, want)
+		}
+	})
+
+	t.Run("prefixed", func(t *testing.T) {
+		const want = "x.foo, x.bar, x.baz"
+		if got := cols.Prefixed("x."); got != want {
+			t.Errorf("got %q; want %q", got, want)
+		}
+	})
+}
+
 func TestBuilder(t *testing.T) {
-	t.Run("unsupported verb", func(t *testing.T) {
-		var b Builder
-		b.Addf("SELECT * FROM %v", "users").
-			Addf("LIMIT 100;")
+	test := func(name string, wantErr error, format string, args ...any) {
+		t.Helper()
+		t.Run(name, func(t *testing.T) {
+			t.Helper()
+			var b Builder
+			b.Addf(format, args...)
+			_, _, err := b.Build()
+			if !errors.Is(err, wantErr) {
+				t.Errorf("\nhave: %v\nwant: %v", err, wantErr)
+			}
+		})
+	}
 
-		if _, _, err := b.Build(); err == nil {
-			t.Errorf("must be error")
-		} else if want := "unsupported verb v"; err.Error() != want {
-			t.Errorf("\nhave: %v\nwant: %v", err, want)
+	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
+	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
+	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
+	test("non-slice argument (batch)", errNonSliceArgument, "WHERE foo = %#$", 1)
+}
+
+func FuzzBuilder(f *testing.F) {
+	f.Add("SELECT %s FROM %s", "*", "users")
+	f.Add("SELECT * FROM %s WHERE name = %$", "users", "john")
+	f.Add("SELECT * FROM users WHERE name = %$ AND surname = %$", "john", "doe")
+
+	// queries that won't return an error (probably should):
+	// f.Add("%$%%$%*", "0", "0")
+
+	f.Fuzz(func(t *testing.T, format, arg1, arg2 string) {
+		var valid int
+		for _, verb := range []string{"%s", "%$", "%?"} {
+			valid += strings.Count(format, verb)
 		}
-	})
-
-	t.Run("different placeholders", func(t *testing.T) {
-		var b Builder
-		b.Addf("WHERE foo = %$ AND bar = %?", 1, 2)
-
-		if _, _, err := b.Build(); !errors.Is(err, errMixedPlaceholders) {
-			t.Errorf("\nhave: %v\nwant: %v", err, errMixedPlaceholders)
+		if valid != 2 {
+			t.Skip("format must have 2 valid verbs")
 		}
-	})
 
-	t.Run("different placeholders in slices", func(t *testing.T) {
 		var b Builder
-		b.Addf("WHERE foo = %+$ AND bar = %+?", 1, 2)
+		b.Addf(format, arg1, arg2)
+		query, args, err := b.Build()
 
-		if _, _, err := b.Build(); !errors.Is(err, errNonSliceArgument) {
-			t.Errorf("\nhave: %v\nwant: %v", err, errNonSliceArgument)
+		if err != nil {
+			// those errors are expected, we're looking for something new.
+			if !errors.Is(err, errUnsupportedVerb) &&
+				!errors.Is(err, errNonSliceArgument) &&
+				!errors.Is(err, errMixedPlaceholders) {
+				t.Errorf("unexpected error: %v", err)
+			}
+			return
 		}
-	})
 
-	t.Run("batch placeholder for non-slice args", func(t *testing.T) {
-		var b Builder
-		b.Addf("WHERE foo = %#$", 123)
+		// NOTE(junk1tm): fmt panics are written in query, should we parse it?
+		_ = query
 
-		if _, _, err := b.Build(); !errors.Is(err, errNonSliceArgument) {
-			t.Errorf("\nhave: %v\nwant: %v", err, errNonSliceArgument)
+		checkArgs := func(strCnt, argsCnt int) {
+			if strings.Count(format, "%s") == strCnt && len(args) != argsCnt {
+				t.Errorf("format with %d string verbs must be bundled with %d arguments", strCnt, argsCnt)
+			}
 		}
+
+		checkArgs(0, 2)
+		checkArgs(1, 1)
+		checkArgs(2, 0)
 	})
 }
