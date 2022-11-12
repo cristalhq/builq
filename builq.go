@@ -7,24 +7,18 @@ import (
 	"strings"
 )
 
-// Columns wrapper for your tables.
+// Columns is a convenience wrapper for table columns.
 type Columns []string
 
+// String implements the [fmt.Stringer] interface.
 func (c Columns) String() string {
 	return strings.Join(c, ", ")
 }
 
+// Prefixed acts the same as String but also prefixes each column with p.
 func (c Columns) Prefixed(p string) string {
 	return p + strings.Join(c, ", "+p)
 }
-
-var (
-	// errMixedPlaceholders is returned by [Builder.Build] when different
-	// placeholders are used in a single query (e.g. WHERE foo = %$ AND bar = %?).
-	errMixedPlaceholders = errors.New("mixed placeholders must not be used")
-
-	errNonSliceArgument = errors.New("cannot expand non-slice argument")
-)
 
 // Builder for SQL queries.
 type Builder struct {
@@ -36,6 +30,7 @@ type Builder struct {
 }
 
 // Addf formats according to a format specifier, writes to query and appends args.
+// TODO(junk1tm): %s/%$/%? and +/# docs
 func (b *Builder) Addf(format string, args ...any) *Builder {
 	if b.err != nil {
 		return b
@@ -55,18 +50,6 @@ func (b *Builder) Build() (string, []any, error) {
 	return b.query.String(), b.args, b.err
 }
 
-func (b *Builder) writeBatchArgs(s fmt.State, verb rune, arg any) {
-	args := b.asSlice(arg)
-	for i, arg := range args {
-		if i > 0 {
-			fmt.Fprint(s, ", ")
-		}
-		fmt.Fprint(s, "(")
-		b.writeArgs(s, verb, arg, true)
-		fmt.Fprint(s, ")")
-	}
-}
-
 func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 	args := []any{arg}
 	if isMulti {
@@ -78,28 +61,40 @@ func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 			fmt.Fprint(s, ", ")
 		}
 
-		b.appendArg(arg, verb)
-
 		switch verb {
 		case '$': // PostgreSQL
+			b.counter++
 			fmt.Fprintf(s, "$%d", b.counter)
 		case '?': // MySQL/SQLite
 			fmt.Fprint(s, "?")
 		default:
 			panic("unreachable")
 		}
+
+		// store the first placeholder used in the query
+		// to check for mixed placeholders later.
+		if b.placeholder == 0 {
+			b.placeholder = verb
+		}
+		if b.placeholder != verb {
+			b.err = errMixedPlaceholders
+			return
+		}
+
+		b.args = append(b.args, arg)
 	}
 }
 
-func (b *Builder) appendArg(arg any, placeholder rune) {
-	b.counter++
-	if b.placeholder == 0 {
-		b.placeholder = placeholder
+func (b *Builder) writeBatchArgs(s fmt.State, verb rune, arg any) {
+	args := b.asSlice(arg)
+	for i, arg := range args {
+		if i > 0 {
+			fmt.Fprint(s, ", ")
+		}
+		fmt.Fprint(s, "(")
+		b.writeArgs(s, verb, arg, true)
+		fmt.Fprint(s, ")")
 	}
-	if b.placeholder != placeholder {
-		b.err = errMixedPlaceholders
-	}
-	b.args = append(b.args, arg)
 }
 
 func (b *Builder) asSlice(v any) []any {
@@ -119,6 +114,20 @@ func (b *Builder) asSlice(v any) []any {
 	return res
 }
 
+var (
+	// errUnsupportedVerb is returned when an unsupported verb is found in a
+	// query.
+	errUnsupportedVerb = errors.New("unsupported verb")
+
+	// errMixedPlaceholders is returned when different placeholders are used in
+	// a single query (e.g. WHERE foo = %$ AND bar = %?).
+	errMixedPlaceholders = errors.New("mixed placeholders must not be used in a single query")
+
+	// errNonSliceArgument is returned when a non-slice argument is provided
+	// with either `+` or `#` modifier.
+	errNonSliceArgument = errors.New("non-slice arguments must no be used with slice modifiers")
+)
+
 // argument is a wrapper for arguments passed to Builder.
 type argument struct {
 	value   any
@@ -126,20 +135,20 @@ type argument struct {
 }
 
 // Format implements the [fmt.Formatter] interface.
-func (a *argument) Format(s fmt.State, v rune) {
-	switch v {
+func (a *argument) Format(s fmt.State, verb rune) {
+	switch verb {
 	case 's': // just a string
 		fmt.Fprint(s, a.value)
 
-	case '$', '?': // PostgreSQL or MySQL/SQLite
+	case '$', '?': // a query argument
 		if s.Flag('#') {
-			a.builder.writeBatchArgs(s, v, a.value)
+			a.builder.writeBatchArgs(s, verb, a.value)
 			return
 		}
 		isMulti := s.Flag('+')
-		a.builder.writeArgs(s, v, a.value, isMulti)
+		a.builder.writeArgs(s, verb, a.value, isMulti)
 
 	default:
-		a.builder.err = fmt.Errorf("unsupported verb %c", v)
+		a.builder.err = fmt.Errorf("%w %c", errUnsupportedVerb, verb)
 	}
 }
