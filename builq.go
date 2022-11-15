@@ -30,7 +30,6 @@ type Builder struct {
 }
 
 // Addf formats according to a format specifier, writes to query and appends args.
-// TODO(junk1tm): %s/%$/%? and +/# docs
 func (b *Builder) Addf(format string, args ...any) *Builder {
 	if b.err != nil {
 		return b

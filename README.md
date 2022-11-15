@@ -10,13 +10,15 @@ Easily build queries in Go.
 
 ## Rationale
 
-Often simple string representing SQL query is what we are looking for. But the parameters and their indexing (`$1`, `$2` etc) requires additional attention. This tiny library helps to build queries and handles parameter indexing.
+The simplest way to represent SQL query is a string. But the query arguments and their indexing (`$1`, `$2` etc) require additional attention. This tiny library helps to build queries and handles parameter indexing.
 
 ## Features
 
 * Simple and easy.
 * Tested.
 * Dependency-free.
+
+See [GUIDE.md](https://github.com/cristalhq/builq/blob/main/GUIDE.md) for more details.
 
 ## Install
 
@@ -53,6 +55,8 @@ fmt.Printf("args:\n%v", args)
 // args:
 // [42 root]
 ```
+
+See examples: [examples_test.go](https://github.com/cristalhq/builq/blob/main/example_test.go).
 
 ## Documentation
 
