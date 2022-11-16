@@ -15,10 +15,11 @@ The simplest way to represent SQL query is a string. But the query arguments and
 ## Features
 
 * Simple and easy.
+* Safe.
 * Tested.
 * Dependency-free.
 
-See [GUIDE.md](https://github.com/cristalhq/builq/blob/main/GUIDE.md) for more details.
+
 
 ## Install
 
@@ -60,7 +61,7 @@ See examples: [examples_test.go](https://github.com/cristalhq/builq/blob/main/ex
 
 ## Documentation
 
-See [these docs][pkg-url].
+See [these docs][pkg-url] or see [GUIDE.md](https://github.com/cristalhq/builq/blob/main/GUIDE.md) for more details.
 
 ## License
 

@@ -1,5 +1,13 @@
 # Guide for builq
 
+## Safety & Sanitization
+
+If query args/params are passed via `%$` or `%?` they will not appear in query but will be appended to the arguments slice (2nd resulting param of `Builder.Build()` method).
+
+`ExampleQuery1` in [examples_test.go](https://github.com/cristalhq/builq/blob/main/example_test.go) explicitly shows that arguments are not a part of `query` string but are in `args` slice.
+
+Such usage prevents potential SQL-injection and/or any other harmful user inputs. However, `%s` should be used with a care and no user input should be passed through `%s`,
+
 ## String placeholder
 
 To write just a string there is the `%s` formatting verb. Works the same as in the `fmt` package.
