@@ -31,13 +31,21 @@ func TestBuilder(t *testing.T) {
 			t.Helper()
 			var b Builder
 			b.Addf(format, args...)
-			_, _, err := b.Build()
+			query, args, err := b.Build()
+			if query != "" {
+				t.Errorf("got %q; want empty string", query)
+			}
+			if len(args) != 0 {
+				t.Errorf("got %v; want empty slice", args)
+			}
 			if !errors.Is(err, wantErr) {
 				t.Errorf("\nhave: %v\nwant: %v", err, wantErr)
 			}
 		})
 	}
 
+	test("too few arguments", errTooFewArguments, "SELECT * FROM %s")
+	test("too many arguments", errTooManyArguments, "SELECT * FROM %s", "users", "users")
 	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
 	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
 	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
@@ -48,9 +56,6 @@ func FuzzBuilder(f *testing.F) {
 	f.Add("SELECT %s FROM %s", "*", "users")
 	f.Add("SELECT * FROM %s WHERE name = %$", "users", "john")
 	f.Add("SELECT * FROM users WHERE name = %$ AND surname = %$", "john", "doe")
-
-	// queries that won't return an error (probably should):
-	// f.Add("%$%%$%*", "0", "0")
 
 	f.Fuzz(func(t *testing.T, format, arg1, arg2 string) {
 		var valid int
@@ -63,20 +68,19 @@ func FuzzBuilder(f *testing.F) {
 
 		var b Builder
 		b.Addf(format, arg1, arg2)
-		query, args, err := b.Build()
+		_, args, err := b.Build()
 
 		if err != nil {
 			// those errors are expected, we're looking for something new.
-			if !errors.Is(err, errUnsupportedVerb) &&
-				!errors.Is(err, errNonSliceArgument) &&
-				!errors.Is(err, errMixedPlaceholders) {
-				t.Errorf("unexpected error: %v", err)
+			if errors.Is(err, errTooFewArguments) ||
+				errors.Is(err, errTooManyArguments) ||
+				errors.Is(err, errUnsupportedVerb) ||
+				errors.Is(err, errNonSliceArgument) ||
+				errors.Is(err, errMixedPlaceholders) {
+				return
 			}
-			return
+			t.Fatalf("unexpected error: %v", err)
 		}
-
-		// NOTE(junk1tm): fmt panics are written in query, should we parse it?
-		_ = query
 
 		checkArgs := func(strCnt, argsCnt int) {
 			if strings.Count(format, "%s") == strCnt && len(args) != argsCnt {
