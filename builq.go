@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -45,8 +46,25 @@ func (b *Builder) Addf(format string, args ...any) *Builder {
 	return b
 }
 
+var missingRE = regexp.MustCompile(`%!.\(MISSING\)`)
+
 func (b *Builder) Build() (string, []any, error) {
-	return b.query.String(), b.args, b.err
+	// prioritize the errors from the query string,
+	// otherwise Build might return a wrong error.
+	query := b.query.String()
+
+	switch {
+	case missingRE.MatchString(query):
+		b.err = errTooFewArguments
+	case strings.Contains(query, "%!(EXTRA"):
+		b.err = errTooManyArguments
+		// TODO(junk1tm): investigate panic cases
+		// case strings.Contains(query, "(PANIC="):
+		// 	_, msg, _ := strings.Cut(query, "(PANIC=")
+		// 	b.err = errors.New(msg)
+	}
+
+	return query, b.args, b.err
 }
 
 func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
@@ -114,6 +132,14 @@ func (b *Builder) asSlice(v any) []any {
 }
 
 var (
+	// errTooFewArguments is returned when too few arguments are provided to the
+	// [Builder.Addf] method.
+	errTooFewArguments = errors.New("too few arguments")
+
+	// errTooFewArguments is returned when too many arguments are provided to
+	// the [Builder.Addf] method.
+	errTooManyArguments = errors.New("too many arguments")
+
 	// errUnsupportedVerb is returned when an unsupported verb is found in a
 	// query.
 	errUnsupportedVerb = errors.New("unsupported verb")
