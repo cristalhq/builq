@@ -31,13 +31,7 @@ func TestBuilder(t *testing.T) {
 			t.Helper()
 			var b Builder
 			b.Addf(format, args...)
-			query, args, err := b.Build()
-			if query != "" {
-				t.Errorf("got %q; want empty string", query)
-			}
-			if len(args) != 0 {
-				t.Errorf("got %v; want empty slice", args)
-			}
+			_, _, err := b.Build()
 			if !errors.Is(err, wantErr) {
 				t.Errorf("\nhave: %v\nwant: %v", err, wantErr)
 			}

@@ -10,9 +10,9 @@ Easily build queries in Go.
 
 ## Rationale
 
-The simplest way to represent SQL query is a string. But the query arguments and
-their indexing (`$1`, `$2` etc) require additional attention. This tiny library
-helps to build queries and handles parameter indexing.
+The simplest way to represent SQL query is a string.
+But the query arguments and their indexing (`$1`, `$2` etc) require additional attention.
+This tiny library helps to build queries and handles parameter indexing.
 
 ## Features
 

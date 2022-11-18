@@ -51,23 +51,20 @@ var missingRE = regexp.MustCompile(`%!.\(MISSING\)`)
 func (b *Builder) Build() (string, []any, error) {
 	// prioritize the errors from the query string,
 	// otherwise Build might return a wrong error.
-
 	query := b.query.String()
+
 	switch {
 	case missingRE.MatchString(query):
-		return "", nil, errTooFewArguments
+		b.err = errTooFewArguments
 	case strings.Contains(query, "%!(EXTRA"):
-		return "", nil, errTooManyArguments
-	case strings.Contains(query, "(PANIC="):
+		b.err = errTooManyArguments
 		// TODO(junk1tm): investigate panic cases
+		// case strings.Contains(query, "(PANIC="):
 		// 	_, msg, _ := strings.Cut(query, "(PANIC=")
-		// 	return "", nil, errors.New(msg)
+		// 	b.err = errors.New(msg)
 	}
 
-	if b.err != nil {
-		return "", nil, b.err
-	}
-	return query, b.args, nil
+	return query, b.args, b.err
 }
 
 func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
