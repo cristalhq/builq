@@ -34,14 +34,23 @@ func (b *Builder) Addf(format string, args ...any) *Builder {
 	if b.err != nil {
 		return b
 	}
-
-	wargs := make([]any, len(args))
-	for i, arg := range args {
-		wargs[i] = &argument{value: arg, builder: b}
+	// prealloc on first Addf
+	if b.args == nil {
+		b.query.Grow(100)
+		b.args = make([]any, 0, 10)
 	}
 
-	fmt.Fprintf(&b.query, format+"\n", wargs...)
+	wargs := make([]any, len(args))
+	for i := range args {
+		wargs[i] = &argument{value: args[i], builder: b}
+	}
 
+	_, err := fmt.Fprintf(&b.query, format, wargs...)
+	if b.err == nil && err != nil {
+		b.err = err
+	}
+
+	b.query.WriteByte('\n')
 	return b
 }
 

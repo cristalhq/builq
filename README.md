@@ -15,7 +15,7 @@ The simplest way to represent SQL query is a string. But the query arguments and
 ## Features
 
 * Simple and easy.
-* Safe.
+* Safe & fast.
 * Tested.
 * Dependency-free.
 
