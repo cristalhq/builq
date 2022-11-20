@@ -17,7 +17,7 @@ This tiny library helps to build queries and handles parameter indexing.
 ## Features
 
 * Simple and easy.
-* Safe.
+* Safe & fast.
 * Tested.
 * Dependency-free.
 
