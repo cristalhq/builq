@@ -79,6 +79,49 @@ func ExampleQuery3() {
 	// [42]
 }
 
+func ExampleQueryWhere() {
+	filter := map[string]any{
+		"name":     "the best",
+		"category": []int{1, 2, 3},
+		"page":     42,
+		"limit":    100,
+	}
+
+	var b builq.Builder
+	b.Addf("SELECT * FROM foo")
+	b.Addf("WHERE active IS TRUE")
+
+	if name, ok := filter["name"]; ok {
+		b.Addf("AND name = %$", name)
+	}
+	if cat, ok := filter["category"]; ok {
+		b.Addf("AND category IN (%+$)", cat)
+	}
+	if page, ok := filter["page"]; ok {
+		b.Addf("AND page LIKE %$", page)
+	}
+	if limit, ok := filter["limit"]; ok {
+		b.Addf("LIMIT %$;", limit)
+	}
+
+	query, args, err := b.Build()
+	panicIf(err)
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// SELECT * FROM foo
+	// WHERE active IS TRUE
+	// AND name = $1
+	// AND category IN ($2, $3, $4)
+	// AND page LIKE $5
+	// LIMIT $6;
+	// args:
+	// [the best 1 2 3 42 100]
+}
+
 func ExampleColumns() {
 	columns := builq.Columns{"id", "created_at", "value"}
 	params := []any{42, "right now", "just testing"}

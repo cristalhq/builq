@@ -34,7 +34,7 @@ Argument must be a slice (for `+`) or a slice of slices (for `#`), otherwise the
 
 ## Speed
 
-Even with the `fmt` packge speed is very good. If case you want zero-allocation query builder consider to cache query and just use it's value (works only for static queries like in `BenchmarkBuildCached`)
+Even with the `fmt` package speed is very good. If case you want zero-allocation query builder consider to cache query and just use it's value (works only for static queries like in `BenchmarkBuildCached`)
 
 ```
 goos: darwin
