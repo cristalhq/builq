@@ -21,6 +21,19 @@ func (c Columns) Prefixed(p string) string {
 	return p + strings.Join(c, ", "+p)
 }
 
+// StrictBuilder acts the same as Builder but Addf accepts only constant strings.
+type StrictBuilder struct {
+	Builder
+}
+
+type constString string
+
+// Addf same as [Builder.Addf] except first param must be a constant string.
+func (sb *StrictBuilder) Addf(format constString, args ...any) *StrictBuilder {
+	sb.Builder.Addf(string(format), args...)
+	return sb
+}
+
 // Builder for SQL queries.
 type Builder struct {
 	query       strings.Builder

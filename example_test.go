@@ -282,6 +282,36 @@ func ExampleSliceInBatch() {
 	// [42 [1 2 3] 69 [4 5 6]]
 }
 
+func ExampleStrictBuilder() {
+	cols := builq.Columns{"foo", "bar"}
+
+	var sb builq.StrictBuilder
+	sb.Addf("SELECT %s FROM %s", cols, "table")
+	sb.Addf("WHERE id = %$", 123)
+
+	// this WILL NOT complile
+	// var orClause = "OR id = %$"
+	// sb.Addf(orClause, 42)
+
+	// WILL compile
+	const orClause2 = "OR id = %$"
+	sb.Addf(orClause2, 42)
+
+	query, args, err := sb.Build()
+	panicIf(err)
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// SELECT foo, bar FROM table
+	// WHERE id = $1
+	// OR id = $2
+	// args:
+	// [123 42]
+}
+
 func panicIf(err error) {
 	if err != nil {
 		panic(err)

@@ -8,6 +8,26 @@ Examples in [example_test.go](example_test.go) explicitly show that query argume
 
 The `%s` verb should be used with an extra care, no user input should be passed through it.
 
+## StrictBuilder
+
+To enforce compile-time queries there is a `builq.StrictBuilder`.
+
+```go
+var sb builq.StrictBuilder
+sb.Addf("SELECT %s FROM %s", cols, "table")
+sb.Addf("WHERE id = %$", 123)
+
+// this WILL NOT complile, orClause isn't const
+// var orClause = "OR id = %$"
+// sb.Addf(orClause, 42)
+
+// WILL compile, orClause2 is known at compile-time
+const orClause2 = "OR id = %$"
+sb.Addf(orClause2, 42)
+```
+
+This builder is added because some projects require constant queries (precise definition might be different but you get the idea).
+
 ## String placeholder
 
 To write just a string there is the `%s` formatting verb. Works the same as in the `fmt` package.
