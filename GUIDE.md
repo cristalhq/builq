@@ -26,7 +26,8 @@ const orClause2 = "OR id = %$"
 sb.Addf(orClause2, 42)
 ```
 
-Some projects require constant queries due to security policies (precise definition might be different but you get the idea).
+The reason behing this API is to improve security and to prevent bad runtime queries.
+Also, some projects require constant queries due to security policies (precise definition might be different but you get the idea).
 
 ## String placeholder
 
