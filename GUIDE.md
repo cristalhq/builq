@@ -8,12 +8,12 @@ Examples in [example_test.go](example_test.go) explicitly show that query argume
 
 The `%s` verb should be used with an extra care, no user input should be passed through it.
 
-## StrictBuilder
+## Compile-time queries
 
-To enforce compile-time queries there is a `builq.StrictBuilder`.
+To enforce compile-time queries `builq.Builder` accepts only constant strings:
 
 ```go
-var sb builq.StrictBuilder
+var sb builq.Builder
 sb.Addf("SELECT %s FROM %s", cols, "table")
 sb.Addf("WHERE id = %$", 123)
 
@@ -26,7 +26,7 @@ const orClause2 = "OR id = %$"
 sb.Addf(orClause2, 42)
 ```
 
-This builder is added because some projects require constant queries (precise definition might be different but you get the idea).
+Some projects require constant queries due to security policies (precise definition might be different but you get the idea).
 
 ## String placeholder
 

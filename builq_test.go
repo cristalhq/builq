@@ -30,7 +30,7 @@ func TestBuilder(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
 			var b Builder
-			b.Addf(format, args...)
+			b.Addf(constString(format), args...)
 			_, _, err := b.Build()
 			if !errors.Is(err, wantErr) {
 				t.Errorf("\nhave: %v\nwant: %v", err, wantErr)
@@ -61,7 +61,7 @@ func FuzzBuilder(f *testing.F) {
 		}
 
 		var b Builder
-		b.Addf(format, arg1, arg2)
+		b.Addf(constString(format), arg1, arg2)
 		_, args, err := b.Build()
 
 		if err != nil {
