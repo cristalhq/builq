@@ -30,8 +30,11 @@ type Builder struct {
 	placeholder rune  // a placeholder used to build the query.
 }
 
+type constString string
+
 // Addf formats according to a format specifier, writes to query and appends args.
-func (b *Builder) Addf(format string, args ...any) *Builder {
+// Format param must be a constant string.
+func (b *Builder) Addf(format constString, args ...any) *Builder {
 	if b.err != nil {
 		return b
 	}
@@ -46,7 +49,7 @@ func (b *Builder) Addf(format string, args ...any) *Builder {
 		wargs[i] = &argument{value: args[i], builder: b}
 	}
 
-	_, err := fmt.Fprintf(&b.query, format, wargs...)
+	_, err := fmt.Fprintf(&b.query, string(format), wargs...)
 	if b.err == nil && err != nil {
 		b.err = err
 	}
