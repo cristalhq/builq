@@ -40,7 +40,8 @@ func TestBuilder(t *testing.T) {
 
 	test("too few arguments", errTooFewArguments, "SELECT * FROM %s")
 	test("too many arguments", errTooManyArguments, "SELECT * FROM %s", "users", "users")
-	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
+	// TODO(oleg): better to support this
+	// test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
 	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
 	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
 	test("non-slice argument (batch)", errNonSliceArgument, "WHERE foo = %#$", 1)
