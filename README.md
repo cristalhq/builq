@@ -21,6 +21,8 @@ This tiny library helps to build queries and handles parameter indexing.
 * Tested.
 * Dependency-free.
 
+See [these docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
+
 ## Install
 
 Go version 1.19+
@@ -58,10 +60,6 @@ fmt.Printf("args:\n%v", args)
 ```
 
 See examples: [example_test.go](example_test.go).
-
-## Documentation
-
-See [these docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
 
 ## License
 
