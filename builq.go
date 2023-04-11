@@ -3,10 +3,14 @@ package builq
 import (
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"regexp"
 	"strings"
 )
+
+// used to enforce const strings in API.
+type constString string
 
 // Columns is a convenience wrapper for table columns.
 type Columns []string
@@ -30,11 +34,24 @@ type Builder struct {
 	placeholder rune  // a placeholder used to build the query.
 }
 
-type constString string
+// OnelineBuilder behaves like Builder but result is 1 line.
+type OnelineBuilder struct {
+	Builder
+}
+
+// Addf formats according to a format specifier, writes to query and appends args.
+// Format param must be a constant string.
+func (b *OnelineBuilder) Addf(format constString, args ...any) *Builder {
+	return b.addf(' ', format, args...)
+}
 
 // Addf formats according to a format specifier, writes to query and appends args.
 // Format param must be a constant string.
 func (b *Builder) Addf(format constString, args ...any) *Builder {
+	return b.addf('\n', format, args...)
+}
+
+func (b *Builder) addf(sep byte, format constString, args ...any) *Builder {
 	if b.err != nil {
 		return b
 	}
@@ -54,16 +71,16 @@ func (b *Builder) Addf(format constString, args ...any) *Builder {
 		b.err = err
 	}
 
-	b.query.WriteByte('\n')
+	b.query.WriteByte(sep)
 	return b
 }
 
 var missingRE = regexp.MustCompile(`%!.\(MISSING\)`)
 
-func (b *Builder) Build() (string, []any, error) {
+func (b *Builder) Build() (query string, args []any, err error) {
 	// prioritize the errors from the query string,
 	// otherwise Build might return a wrong error.
-	query := b.query.String()
+	query = b.query.String()
 
 	switch {
 	case missingRE.MatchString(query):
@@ -79,7 +96,7 @@ func (b *Builder) Build() (string, []any, error) {
 	return query, b.args, b.err
 }
 
-func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
+func (b *Builder) writeArgs(w io.Writer, verb rune, arg any, isMulti bool) {
 	args := []any{arg}
 	if isMulti {
 		args = b.asSlice(arg)
@@ -87,15 +104,15 @@ func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 
 	for i, arg := range args {
 		if i > 0 {
-			fmt.Fprint(s, ", ")
+			fmt.Fprint(w, ", ")
 		}
 
 		switch verb {
 		case '$': // PostgreSQL
 			b.counter++
-			fmt.Fprintf(s, "$%d", b.counter)
+			fmt.Fprintf(w, "$%d", b.counter)
 		case '?': // MySQL/SQLite
-			fmt.Fprint(s, "?")
+			fmt.Fprint(w, "?")
 		default:
 			panic("unreachable")
 		}
@@ -106,7 +123,7 @@ func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 			b.placeholder = verb
 		}
 		if b.placeholder != verb {
-			b.err = errMixedPlaceholders
+			b.setErr(errMixedPlaceholders)
 			return
 		}
 
@@ -114,7 +131,7 @@ func (b *Builder) writeArgs(s fmt.State, verb rune, arg any, isMulti bool) {
 	}
 }
 
-func (b *Builder) writeBatchArgs(s fmt.State, verb rune, arg any) {
+func (b *Builder) writeBatchArgs(s io.Writer, verb rune, arg any) {
 	args := b.asSlice(arg)
 	for i, arg := range args {
 		if i > 0 {
@@ -130,9 +147,7 @@ func (b *Builder) asSlice(v any) []any {
 	value := reflect.ValueOf(v)
 
 	if value.Kind() != reflect.Slice {
-		if b.err == nil {
-			b.err = errNonSliceArgument
-		}
+		b.setErr(errNonSliceArgument)
 		return nil
 	}
 
@@ -187,5 +202,11 @@ func (a *argument) Format(s fmt.State, verb rune) {
 
 	default:
 		a.builder.err = fmt.Errorf("%w %c", errUnsupportedVerb, verb)
+	}
+}
+
+func (b *Builder) setErr(err error) {
+	if b.err == nil {
+		b.err = err
 	}
 }

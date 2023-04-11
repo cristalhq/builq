@@ -6,7 +6,7 @@ import (
 	"github.com/cristalhq/builq"
 )
 
-func BenchmarkBuildNaive(b *testing.B) {
+func BenchmarkBuildSimple(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var bb builq.Builder
 		bb.Addf("SELECT %s FROM %s", "foo,bar", "table")
@@ -16,7 +16,7 @@ func BenchmarkBuildNaive(b *testing.B) {
 		switch {
 		case err != nil:
 			b.Fatal(err)
-		case len(query) == 0:
+		case query == "":
 			b.Fatal("empty query")
 		case len(args) == 0:
 			b.Fatal("empty args")
@@ -40,7 +40,7 @@ func BenchmarkBuildManyArgs(b *testing.B) {
 		switch {
 		case err != nil:
 			b.Fatal(err)
-		case len(query) == 0:
+		case query == "":
 			b.Fatal("empty query")
 		case len(args) == 0:
 			b.Fatal("empty args")
@@ -64,7 +64,7 @@ func BenchmarkBuildCached(b *testing.B) {
 		switch {
 		case err != nil:
 			b.Fatal(err)
-		case len(query) == 0:
+		case query == "":
 			b.Fatal("empty query")
 		case len(args) == 0:
 			b.Fatal("empty args")
