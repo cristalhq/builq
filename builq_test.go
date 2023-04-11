@@ -62,8 +62,8 @@ func FuzzBuilder(f *testing.F) {
 
 		var b Builder
 		b.Addf(constString(format), arg1, arg2)
-		_, args, err := b.Build()
 
+		_, args, err := b.Build()
 		if err != nil {
 			// those errors are expected, we're looking for something new.
 			if errors.Is(err, errTooFewArguments) ||

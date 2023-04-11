@@ -36,7 +36,45 @@ func ExampleBuilder() {
 	// [123 42]
 }
 
-func ExampleQuery1() {
+func ExampleOnelineBuilder() {
+	cols := builq.Columns{"foo", "bar"}
+
+	var b builq.OnelineBuilder
+	b.Addf("SELECT %s FROM %s", cols, "table")
+	b.Addf("WHERE id = %$", 123)
+
+	query, _, err := b.Build()
+	panicIf(err)
+
+	fmt.Print(query)
+
+	// Output:
+	// SELECT foo, bar FROM table WHERE id = $1
+}
+
+func ExampleColumns() {
+	columns := builq.Columns{"id", "created_at", "value"}
+	params := []any{42, "right now", "just testing"}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO %s (%s)", "table", columns)
+	b.Addf("VALUES (%?, %?, %?);", params...)
+
+	query, args, err := b.Build()
+	panicIf(err)
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, created_at, value)
+	// VALUES (?, ?, ?);
+	// args:
+	// [42 right now just testing]
+}
+
+func Example_query1() {
 	cols := builq.Columns{"foo, bar"}
 
 	var b builq.Builder
@@ -59,7 +97,7 @@ func ExampleQuery1() {
 	// [42 root]
 }
 
-func ExampleQuery2() {
+func Example_query2() {
 	var b builq.Builder
 	b.Addf("SELECT %s FROM %s", "foo, bar", "users")
 	b.Addf("WHERE")
@@ -86,7 +124,7 @@ func ExampleQuery2() {
 	// [true 42]
 }
 
-func ExampleQuery3() {
+func Example_query3() {
 	var b builq.Builder
 	b.Addf("SELECT * FROM foo").
 		Addf("WHERE active IS TRUE").
@@ -109,7 +147,7 @@ func ExampleQuery3() {
 	// [42]
 }
 
-func ExampleQueryWhere() {
+func Example_queryWhere() {
 	filter := map[string]any{
 		"name":     "the best",
 		"category": []int{1, 2, 3},
@@ -152,29 +190,7 @@ func ExampleQueryWhere() {
 	// [the best 1 2 3 42 100]
 }
 
-func ExampleColumns() {
-	columns := builq.Columns{"id", "created_at", "value"}
-	params := []any{42, "right now", "just testing"}
-
-	var b builq.Builder
-	b.Addf("INSERT INTO %s (%s)", "table", columns)
-	b.Addf("VALUES (%?, %?, %?);", params...)
-
-	query, args, err := b.Build()
-	panicIf(err)
-
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
-
-	// Output:
-	// query:
-	// INSERT INTO table (id, created_at, value)
-	// VALUES (?, ?, ?);
-	// args:
-	// [42 right now just testing]
-}
-
-func ExampleSlicePostgres() {
+func Example_slicePostgres() {
 	params := []any{42, true, "str"}
 
 	var b builq.Builder
@@ -195,7 +211,7 @@ func ExampleSlicePostgres() {
 	// [42 true str]
 }
 
-func ExampleSliceMySQL() {
+func Example_sliceMySQL() {
 	params := []any{42, true, "str"}
 
 	var b builq.Builder
@@ -216,7 +232,7 @@ func ExampleSliceMySQL() {
 	// [42 true str]
 }
 
-func ExampleInsertReturn() {
+func Example_insertReturn() {
 	cols := builq.Columns{"id", "is_active", "name"}
 	params := []any{true, "str"}
 
@@ -240,7 +256,7 @@ func ExampleInsertReturn() {
 	// [true str]
 }
 
-func ExampleBatchPostgres() {
+func Example_batchPostgres() {
 	params := [][]any{
 		{42, true, "str"},
 		{69, true, "noice"},
@@ -264,7 +280,7 @@ func ExampleBatchPostgres() {
 	// [42 true str 69 true noice]
 }
 
-func ExampleBatchMySQL() {
+func Example_batchMySQL() {
 	params := [][]any{
 		{42, true, "str"},
 		{69, true, "noice"},
@@ -288,7 +304,7 @@ func ExampleBatchMySQL() {
 	// [42 true str 69 true noice]
 }
 
-func ExampleSliceInBatch() {
+func Example_sliceInBatch() {
 	params := [][]any{
 		{42, []any{1, 2, 3}},
 		{69, []any{4, 5, 6}},
