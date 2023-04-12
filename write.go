@@ -86,10 +86,6 @@ func (b *Builder) writeArg(verb byte, arg any) {
 			b.query.WriteByte('\'')
 			b.query.WriteString(arg)
 			b.query.WriteByte('\'')
-		case fmt.Stringer:
-			b.query.WriteByte('\'')
-			b.query.WriteString(arg.String())
-			b.query.WriteByte('\'')
 		default:
 			b.query.WriteString(fmt.Sprint(arg))
 		}
