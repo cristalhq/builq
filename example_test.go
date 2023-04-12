@@ -52,6 +52,23 @@ func ExampleOnelineBuilder() {
 	// SELECT foo, bar FROM table WHERE id = $1
 }
 
+func ExampleBuilder_DebugBuild() {
+	cols := builq.Columns{"foo", "bar"}
+
+	var sb builq.Builder
+	sb.Addf("SELECT %s FROM table", cols)
+	sb.Addf("WHERE id = %$", 123)
+	sb.Addf("OR id = %$", "42")
+
+	fmt.Printf("debug:\n%v", sb.DebugBuild())
+
+	// Output:
+	// debug:
+	// SELECT foo, bar FROM table
+	// WHERE id = 123
+	// OR id = '42'
+}
+
 func ExampleColumns() {
 	columns := builq.Columns{"id", "created_at", "value"}
 	params := []any{42, "right now", "just testing"}

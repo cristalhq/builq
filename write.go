@@ -80,6 +80,22 @@ func (b *Builder) writeSlice(verb byte, arg any) {
 }
 
 func (b *Builder) writeArg(verb byte, arg any) {
+	if b.debug {
+		switch arg := arg.(type) {
+		case string:
+			b.query.WriteByte('\'')
+			b.query.WriteString(arg)
+			b.query.WriteByte('\'')
+		case fmt.Stringer:
+			b.query.WriteByte('\'')
+			b.query.WriteString(arg.String())
+			b.query.WriteByte('\'')
+		default:
+			b.query.WriteString(fmt.Sprint(arg))
+		}
+		return
+	}
+
 	switch verb {
 	case 's':
 		switch arg := arg.(type) {
