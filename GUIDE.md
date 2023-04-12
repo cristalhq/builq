@@ -53,6 +53,13 @@ Both `%$` and `%?` formats can be extended with `+` or `#`:
 
 Argument must be a slice (for `+`) or a slice of slices (for `#`), otherwise the `.Build()` method returns an error.
 
+## Debug
+
+The convenience `DebugBuild` method can be used to debug queries.
+Unlike `Build` it returns a complete query with all the placeholders being replaced with their arguments.
+The query can then be copy-pasted and executed directly from DB.
+While handy during development this method could lead to SQL injections, so be careful and avoid it in production code.
+
 ## Speed
 
 Even with the `fmt` package speed is very good. If case you want zero-allocation query builder consider to cache query and just use it's value (works only for static queries like in `BenchmarkBuildCached`)

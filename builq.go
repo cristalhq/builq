@@ -2,10 +2,7 @@ package builq
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"reflect"
-	"regexp"
 	"strings"
 )
 
@@ -28,10 +25,14 @@ func (c Columns) Prefixed(p string) string {
 // Builder for SQL queries.
 type Builder struct {
 	query       strings.Builder
+	parts       []string
+	rawArgs     [][]any
 	args        []any
 	err         error // the first error occurred while building the query.
 	counter     int   // a counter for numbered placeholders ($1, $2, ...).
 	placeholder rune  // a placeholder used to build the query.
+	sep         byte
+	debug       bool
 }
 
 // OnelineBuilder behaves like Builder but result is 1 line.
@@ -42,105 +43,56 @@ type OnelineBuilder struct {
 // Addf formats according to a format specifier, writes to query and appends args.
 // Format param must be a constant string.
 func (b *OnelineBuilder) Addf(format constString, args ...any) *Builder {
-	return b.addf(' ', format, args...)
+	if b.sep == 0 {
+		b.sep = ' '
+	}
+	return b.addf(format, args...)
 }
 
 // Addf formats according to a format specifier, writes to query and appends args.
 // Format param must be a constant string.
 func (b *Builder) Addf(format constString, args ...any) *Builder {
-	return b.addf('\n', format, args...)
+	if b.sep == 0 {
+		b.sep = '\n'
+	}
+	return b.addf(format, args...)
 }
 
-func (b *Builder) addf(sep byte, format constString, args ...any) *Builder {
-	if b.err != nil {
-		return b
+func (b *Builder) addf(format constString, args ...any) *Builder {
+	if len(b.parts) == 0 {
+		// TODO: better defaults
+		b.parts = make([]string, 0, 10)
+		b.rawArgs = make([][]any, 0, 10)
 	}
-	// prealloc on first Addf
-	if b.args == nil {
-		b.query.Grow(100)
-		b.args = make([]any, 0, 10)
-	}
-
-	wargs := make([]any, len(args))
-	for i := range args {
-		wargs[i] = &argument{value: args[i], builder: b}
-	}
-
-	_, err := fmt.Fprintf(&b.query, string(format), wargs...)
-	if b.err == nil && err != nil {
-		b.err = err
-	}
-
-	b.query.WriteByte(sep)
+	b.parts = append(b.parts, string(format))
+	b.rawArgs = append(b.rawArgs, args)
 	return b
 }
 
-var missingRE = regexp.MustCompile(`%!.\(MISSING\)`)
-
 func (b *Builder) Build() (query string, args []any, err error) {
-	// prioritize the errors from the query string,
-	// otherwise Build might return a wrong error.
-	query = b.query.String()
-
-	switch {
-	case missingRE.MatchString(query):
-		b.err = errTooFewArguments
-	case strings.Contains(query, "%!(EXTRA"):
-		b.err = errTooManyArguments
-		// TODO(junk1tm): investigate panic cases
-		// case strings.Contains(query, "(PANIC="):
-		// 	_, msg, _ := strings.Cut(query, "(PANIC=")
-		// 	b.err = errors.New(msg)
-	}
-
+	query = b.build()
 	return query, b.args, b.err
 }
 
-func (b *Builder) writeArgs(w io.Writer, verb rune, arg any, isMulti bool) {
-	args := []any{arg}
-	if isMulti {
-		args = b.asSlice(arg)
-	}
-
-	for i, arg := range args {
-		if i > 0 {
-			fmt.Fprint(w, ", ")
-		}
-
-		switch verb {
-		case '$': // PostgreSQL
-			b.counter++
-			fmt.Fprintf(w, "$%d", b.counter)
-		case '?': // MySQL/SQLite
-			fmt.Fprint(w, "?")
-		default:
-			panic("unreachable")
-		}
-
-		// store the first placeholder used in the query
-		// to check for mixed placeholders later.
-		if b.placeholder == 0 {
-			b.placeholder = verb
-		}
-		if b.placeholder != verb {
-			b.setErr(errMixedPlaceholders)
-			return
-		}
-
-		b.args = append(b.args, arg)
-	}
+func (b *Builder) DebugBuild() (query string) {
+	b.debug = true
+	q := b.build()
+	b.debug = false
+	return q
 }
 
-func (b *Builder) writeBatchArgs(s io.Writer, verb rune, arg any) {
-	args := b.asSlice(arg)
-	for i, arg := range args {
-		if i > 0 {
-			fmt.Fprint(s, ", ")
-		}
-		fmt.Fprint(s, "(")
-		b.writeArgs(s, verb, arg, true)
-		fmt.Fprint(s, ")")
+func (b *Builder) build() string {
+	b.query.Grow(100)
+	b.args = make([]any, 0, 10)
+
+	for i := range b.parts {
+		format := b.parts[i]
+		args := b.rawArgs[i]
+
+		err := b.write(format, args...)
+		b.setErr(err)
 	}
+	return b.query.String()
 }
 
 func (b *Builder) asSlice(v any) []any {
@@ -179,31 +131,6 @@ var (
 	// with either `+` or `#` modifier.
 	errNonSliceArgument = errors.New("non-slice arguments must not be used with slice modifiers")
 )
-
-// argument is a wrapper for arguments passed to Builder.
-type argument struct {
-	value   any
-	builder *Builder
-}
-
-// Format implements the [fmt.Formatter] interface.
-func (a *argument) Format(s fmt.State, verb rune) {
-	switch verb {
-	case 's': // just a string
-		fmt.Fprint(s, a.value)
-
-	case '$', '?': // a query argument
-		if s.Flag('#') {
-			a.builder.writeBatchArgs(s, verb, a.value)
-			return
-		}
-		isMulti := s.Flag('+')
-		a.builder.writeArgs(s, verb, a.value, isMulti)
-
-	default:
-		a.builder.err = fmt.Errorf("%w %c", errUnsupportedVerb, verb)
-	}
-}
 
 func (b *Builder) setErr(err error) {
 	if b.err == nil {
