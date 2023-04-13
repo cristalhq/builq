@@ -31,8 +31,8 @@ type Builder struct {
 	err         error // the first error occurred while building the query.
 	counter     int   // a counter for numbered placeholders ($1, $2, ...).
 	placeholder rune  // a placeholder used to build the query.
-	sep         byte
-	debug       bool
+	sep         byte  // a separator between Addf calls.
+	debug       bool  // is it DebugBuild call to fill with args.
 }
 
 // OnelineBuilder behaves like Builder but result is 1 line.
