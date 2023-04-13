@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (b *Builder) write(s string, args ...any) error {
+func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...any) error {
 	for argID := 0; ; argID++ {
 		n := strings.IndexByte(s, '%')
 		if n == -1 {
@@ -14,12 +14,12 @@ func (b *Builder) write(s string, args ...any) error {
 				b.setErr(errTooManyArguments)
 			}
 
-			b.query.WriteString(s)
-			b.query.WriteByte(b.sep)
+			sb.WriteString(s)
+			sb.WriteByte(b.sep)
 			return nil
 		}
 
-		b.query.WriteString(s[:n])
+		sb.WriteString(s[:n])
 
 		if argID >= len(args) {
 			return errTooFewArguments
@@ -29,26 +29,26 @@ func (b *Builder) write(s string, args ...any) error {
 
 		s = s[n+1:] // skip '%'
 		switch verb := s[0]; verb {
-		case 's', '$', '?':
+		case '$', '?', 's', 'd':
 			s = s[1:]
-			b.writeArg(verb, arg)
+			b.writeArg(sb, resArgs, verb, arg)
 
 		case '+', '#':
 			isBatch := verb == '#'
 			s = s[1:]
 			if len(s) < 1 {
-				// TODO: Error
+				b.setErr(errIncorrectVerb)
 				continue
 			}
 
-			switch verb := (s[0]); verb {
+			switch verb := s[0]; verb {
 			case '$', '?':
 				s = s[1:]
 
 				if isBatch {
-					b.writeBatch(verb, arg)
+					b.writeBatch(sb, resArgs, verb, arg)
 				} else {
-					b.writeSlice(verb, arg)
+					b.writeSlice(sb, resArgs, verb, arg)
 				}
 			default:
 				b.setErr(errUnsupportedVerb)
@@ -59,66 +59,88 @@ func (b *Builder) write(s string, args ...any) error {
 	}
 }
 
-func (b *Builder) writeBatch(verb byte, arg any) {
+func (b *Builder) writeBatch(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
 	for i, arg := range b.asSlice(arg) {
 		if i > 0 {
-			b.query.WriteString(", ")
+			sb.WriteString(", ")
 		}
-		b.query.WriteByte('(')
-		b.writeSlice(verb, arg)
-		b.query.WriteByte(')')
+		sb.WriteByte('(')
+		b.writeSlice(sb, resArgs, verb, arg)
+		sb.WriteByte(')')
 	}
 }
 
-func (b *Builder) writeSlice(verb byte, arg any) {
+func (b *Builder) writeSlice(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
 	for i, arg := range b.asSlice(arg) {
 		if i > 0 {
-			b.query.WriteString(", ")
+			sb.WriteString(", ")
 		}
-		b.writeArg(verb, arg)
+		b.writeArg(sb, resArgs, verb, arg)
 	}
 }
 
-func (b *Builder) writeArg(verb byte, arg any) {
+func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
 	if b.debug {
 		switch arg := arg.(type) {
 		case string:
-			b.query.WriteByte('\'')
-			b.query.WriteString(arg)
-			b.query.WriteByte('\'')
+			sb.WriteByte('\'')
+			sb.WriteString(arg)
+			sb.WriteByte('\'')
 		default:
-			b.query.WriteString(fmt.Sprint(arg))
+			fmt.Fprint(sb, arg)
 		}
 		return
 	}
 
+	var isSimple bool
+
 	switch verb {
-	case 's':
-		switch arg := arg.(type) {
-		case string:
-			b.query.WriteString(arg)
-		case fmt.Stringer:
-			b.query.WriteString(arg.String())
-		default:
-			fmt.Fprint(&b.query, arg)
-		}
 	case '$':
 		b.counter++
-		b.query.WriteByte('$')
-		b.query.WriteString(strconv.Itoa(b.counter))
-		b.args = append(b.args, arg)
+		sb.WriteByte('$')
+		sb.WriteString(strconv.Itoa(b.counter))
+		*resArgs = append(*resArgs, arg)
 	case '?':
-		b.query.WriteByte('?')
-		b.args = append(b.args, arg)
+		sb.WriteByte('?')
+		*resArgs = append(*resArgs, arg)
+	case 's':
+		isSimple = true
+		switch arg := arg.(type) {
+		case string:
+			sb.WriteString(arg)
+		case fmt.Stringer:
+			sb.WriteString(arg.String())
+		default:
+			fmt.Fprint(sb, arg)
+		}
+	case 'd':
+		isSimple = true
+		b.assertNumber(arg)
+		fmt.Fprint(sb, arg)
+	default:
+		panic("unreachable")
+	}
+
+	// ok to have many simple placeholders
+	if isSimple {
+		return
 	}
 
 	// store the first placeholder used in the query
 	// to check for mixed placeholders later
-	// ignore 's' because it's ok to have in any case
-	if b.placeholder == 0 && verb != 's' {
-		b.placeholder = rune(verb)
+	if b.placeholder == 0 {
+		b.placeholder = verb
 	}
-	if verb != 's' && b.placeholder != rune(verb) {
+	if b.placeholder != verb {
 		b.setErr(errMixedPlaceholders)
+	}
+}
+
+func (b *Builder) assertNumber(v any) {
+	switch v.(type) {
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64:
+	default:
+		b.setErr(errNonNumericArg)
 	}
 }

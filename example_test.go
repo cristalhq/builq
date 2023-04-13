@@ -58,7 +58,7 @@ func ExampleBuilder_DebugBuild() {
 	var sb builq.Builder
 	sb.Addf("SELECT %s FROM table", cols)
 	sb.Addf("WHERE id = %$", 123)
-	sb.Addf("OR id = %$", "42")
+	sb.Addf("OR id = %$ + %s", "42", 690)
 
 	fmt.Printf("debug:\n%v", sb.DebugBuild())
 
@@ -66,7 +66,7 @@ func ExampleBuilder_DebugBuild() {
 	// debug:
 	// SELECT foo, bar FROM table
 	// WHERE id = 123
-	// OR id = '42'
+	// OR id = '42' + 690
 }
 
 func ExampleColumns() {
