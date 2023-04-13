@@ -49,6 +49,7 @@ func TestBuilder(t *testing.T) {
 	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
 	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
 	test("non-slice argument (batch)", errNonSliceArgument, "WHERE foo = %#$", 1)
+	test("non-numeric argument", errNonNumericArg, "WHERE foo = %d", "a")
 }
 
 func FuzzBuilder(f *testing.F) {
