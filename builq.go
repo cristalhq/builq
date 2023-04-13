@@ -9,6 +9,12 @@ import (
 // used to enforce const strings in API.
 type constString string
 
+// FromInsecure wraps dynamic string into a type
+// that can be passed to [Builder.Addf].
+func FromInsecure(s string) constString {
+	return constString(s)
+}
+
 // Columns is a convenience wrapper for table columns.
 type Columns []string
 
@@ -121,7 +127,7 @@ var (
 	// errUnsupportedVerb when %X is found and X isn't supported.
 	errUnsupportedVerb = errors.New("unsupported verb")
 
-	// errIncorrectVerb is passed like `%+`.`
+	// errIncorrectVerb is passed like `%+` or similar.
 	errIncorrectVerb = errors.New("incorrect verb")
 
 	// errMixedPlaceholders when $ AND ? are mixed in 1 query.

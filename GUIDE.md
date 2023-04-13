@@ -29,6 +29,10 @@ sb.Addf(orClause2, 42)
 The reason behing this API is to improve security and to prevent bad runtime queries.
 Also, some projects require constant queries due to security policies (precise definition might be different but you get the idea).
 
+## From insercure
+
+TODO
+
 ## String placeholder
 
 To write just a string there is the `%s` formatting verb. Works the same as in the `fmt` package.

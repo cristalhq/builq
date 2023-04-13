@@ -92,6 +92,22 @@ func ExampleColumns() {
 	// [42 right now just testing]
 }
 
+func ExampleFromInsecure() {
+	q := "SELECT something"
+	s := builq.FromInsecure(q)
+
+	var b builq.Builder
+	b.Addf(s)
+	// b.Addf(q) // compilation error
+
+	query, _, _ := b.Build()
+	fmt.Printf("query:\n%v", query)
+
+	// Output:
+	// query:
+	// SELECT something
+}
+
 func Example_query1() {
 	cols := builq.Columns{"foo, bar"}
 
