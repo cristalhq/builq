@@ -117,8 +117,6 @@ func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg a
 		isSimple = true
 		b.assertNumber(arg)
 		fmt.Fprint(sb, arg)
-	default:
-		panic("unreachable")
 	}
 
 	// ok to have many simple placeholders
