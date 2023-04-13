@@ -38,12 +38,18 @@ func TestBuilder(t *testing.T) {
 		})
 	}
 
+	test("bad verb", errUnsupportedVerb, "SELECT * FROM %+ slice", 1)
+	test("bad verb", errUnsupportedVerb, "SELECT * FROM %+ slice", 1)
+	test("incorrect verb 1", errIncorrectVerb, "SELECT * FROM %+", 1)
+	test("incorrect verb 2", errIncorrectVerb, "SELECT * FROM %#", 1)
+	test("too few arguments", errTooFewArguments, "SELECT * FROM % super")
 	test("too few arguments", errTooFewArguments, "SELECT * FROM %s")
 	test("too many arguments", errTooManyArguments, "SELECT * FROM %s", "users", "users")
 	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
 	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
 	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
 	test("non-slice argument (batch)", errNonSliceArgument, "WHERE foo = %#$", 1)
+	test("non-numeric argument", errNonNumericArg, "WHERE foo = %d", "a")
 }
 
 func FuzzBuilder(f *testing.F) {

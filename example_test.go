@@ -2,6 +2,7 @@ package builq_test
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/cristalhq/builq"
 )
@@ -58,7 +59,7 @@ func ExampleBuilder_DebugBuild() {
 	var sb builq.Builder
 	sb.Addf("SELECT %s FROM table", cols)
 	sb.Addf("WHERE id = %$", 123)
-	sb.Addf("OR id = %$", "42")
+	sb.Addf("OR id = %$ + %d", "42", 690)
 
 	fmt.Printf("debug:\n%v", sb.DebugBuild())
 
@@ -66,7 +67,7 @@ func ExampleBuilder_DebugBuild() {
 	// debug:
 	// SELECT foo, bar FROM table
 	// WHERE id = 123
-	// OR id = '42'
+	// OR id = '42' + 690
 }
 
 func ExampleColumns() {
@@ -168,7 +169,8 @@ func Example_queryWhere() {
 	filter := map[string]any{
 		"name":     "the best",
 		"category": []int{1, 2, 3},
-		"page":     42,
+		"pat":      regexp.MustCompile("pat+"),
+		"prob":     0.42,
 		"limit":    100,
 	}
 
@@ -182,11 +184,14 @@ func Example_queryWhere() {
 	if cat, ok := filter["category"]; ok {
 		b.Addf("AND category IN (%+$)", cat)
 	}
-	if page, ok := filter["page"]; ok {
-		b.Addf("AND page LIKE %$", page)
+	if pat, ok := filter["pat"]; ok {
+		b.Addf("AND page LIKE '%s'", pat)
+	}
+	if prob, ok := filter["prob"]; ok {
+		b.Addf("AND prob < %s", prob)
 	}
 	if limit, ok := filter["limit"]; ok {
-		b.Addf("LIMIT %$;", limit)
+		b.Addf("LIMIT %d;", limit)
 	}
 
 	query, args, err := b.Build()
@@ -201,10 +206,11 @@ func Example_queryWhere() {
 	// WHERE active IS TRUE
 	// AND name = $1
 	// AND category IN ($2, $3, $4)
-	// AND page LIKE $5
-	// LIMIT $6;
+	// AND page LIKE 'pat+'
+	// AND prob < 0.42
+	// LIMIT 100;
 	// args:
-	// [the best 1 2 3 42 100]
+	// [the best 1 2 3]
 }
 
 func Example_slicePostgres() {
