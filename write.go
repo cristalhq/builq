@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...any) error {
@@ -81,14 +82,7 @@ func (b *Builder) writeSlice(sb *strings.Builder, resArgs *[]any, verb byte, arg
 
 func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
 	if b.debug {
-		switch arg := arg.(type) {
-		case string:
-			sb.WriteByte('\'')
-			sb.WriteString(arg)
-			sb.WriteByte('\'')
-		default:
-			fmt.Fprint(sb, arg)
-		}
+		b.writeDebug(sb, arg)
 		return
 	}
 
@@ -134,10 +128,38 @@ func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg a
 	}
 }
 
+func (b *Builder) writeDebug(sb *strings.Builder, arg any) {
+	switch arg := arg.(type) {
+	case Columns:
+		sb.WriteString(arg.String())
+	case time.Time:
+		sb.WriteByte('\'')
+		sb.WriteString(arg.UTC().Format("2006-01-02 15:04:05:999999"))
+		sb.WriteByte('\'')
+	case fmt.Stringer:
+		sb.WriteByte('\'')
+		sb.WriteString(arg.String())
+		sb.WriteByte('\'')
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
+		fmt.Fprint(sb, arg)
+	case string:
+		sb.WriteByte('\'')
+		sb.WriteString(arg)
+		sb.WriteByte('\'')
+	default:
+		sb.WriteByte('\'')
+		fmt.Fprint(sb, arg)
+		sb.WriteByte('\'')
+	}
+}
+
 func (b *Builder) assertNumber(v any) {
 	switch v.(type) {
 	case int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64:
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
 	default:
 		b.setErr(errNonNumericArg)
 	}
