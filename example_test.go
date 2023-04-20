@@ -3,6 +3,7 @@ package builq_test
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/cristalhq/builq"
 )
@@ -56,10 +57,14 @@ func ExampleOnelineBuilder() {
 func ExampleBuilder_DebugBuild() {
 	cols := builq.Columns{"foo", "bar"}
 
+	ts := time.Date(2009, time.November, 10, 12, 13, 15, 16, time.UTC)
+
 	var sb builq.Builder
 	sb.Addf("SELECT %s FROM table", cols)
 	sb.Addf("WHERE id = %$", 123)
-	sb.Addf("OR id = %$ + %d", "42", 690)
+	sb.Addf("OR id = %$ + %d", "42", 69.069)
+	sb.Addf("XOR created_at = %$", ts)
+	sb.Addf("MAYBE IN arr = %$", []int{1, 2, 3})
 
 	fmt.Printf("debug:\n%v", sb.DebugBuild())
 
@@ -67,7 +72,9 @@ func ExampleBuilder_DebugBuild() {
 	// debug:
 	// SELECT foo, bar FROM table
 	// WHERE id = 123
-	// OR id = '42' + 690
+	// OR id = '42' + 69.069
+	// XOR created_at = '2009-11-10 12:13:15:999999'
+	// MAYBE IN arr = '[1 2 3]'
 }
 
 func ExampleColumns() {
@@ -171,7 +178,7 @@ func Example_queryWhere() {
 		"category": []int{1, 2, 3},
 		"pat":      regexp.MustCompile("pat+"),
 		"prob":     0.42,
-		"limit":    100,
+		"limit":    100.1,
 	}
 
 	var b builq.Builder
@@ -208,7 +215,7 @@ func Example_queryWhere() {
 	// AND category IN ($2, $3, $4)
 	// AND page LIKE 'pat+'
 	// AND prob < 0.42
-	// LIMIT 100;
+	// LIMIT 100.1;
 	// args:
 	// [the best 1 2 3]
 }
