@@ -42,9 +42,9 @@ type OnelineBuilder struct {
 type BuildFn = func(format constString, args ...any) *Builder
 
 // BuilderFunc return builder and shorthand func to build queries. See examples.
-func BuilderFunc() (Builder, BuildFn) {
+func BuilderFunc() (*Builder, BuildFn) {
 	var b Builder
-	return b, b.Addf
+	return &b, b.Addf
 }
 
 // Addf formats according to a format specifier, writes to query and appends args.
