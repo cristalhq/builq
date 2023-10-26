@@ -38,6 +38,15 @@ type OnelineBuilder struct {
 	Builder
 }
 
+// BuildFn represents [Builder.Addf]. Just for the easier BuilderFunc declaration.
+type BuildFn = func(format constString, args ...any) *Builder
+
+// BuilderFunc return builder and shorthand func to build queries. See examples.
+func BuilderFunc() (Builder, BuildFn) {
+	var b Builder
+	return b, b.Addf
+}
+
 // Addf formats according to a format specifier, writes to query and appends args.
 // Format param must be a constant string.
 func (b *OnelineBuilder) Addf(format constString, args ...any) *Builder {
@@ -121,7 +130,7 @@ var (
 	// errUnsupportedVerb when %X is found and X isn't supported.
 	errUnsupportedVerb = errors.New("unsupported verb")
 
-	// errIncorrectVerb is passed like `%+`.`
+	// errIncorrectVerb is passed like `%+`.
 	errIncorrectVerb = errors.New("incorrect verb")
 
 	// errMixedPlaceholders when $ AND ? are mixed in 1 query.

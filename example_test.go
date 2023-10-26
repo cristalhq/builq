@@ -54,6 +54,21 @@ func ExampleOnelineBuilder() {
 	// SELECT foo, bar FROM table WHERE id = $1
 }
 
+func ExampleBuilderFunc() {
+	b, f := builq.BuilderFunc()
+	f("SELECT this")
+	f("FROM %$", "that")
+
+	query, _, err := b.Build()
+	panicIf(err)
+
+	fmt.Print(query)
+
+	// Output:
+	// SELECT this
+	// FROM $1
+}
+
 func ExampleBuilder_DebugBuild() {
 	cols := builq.Columns{"foo", "bar"}
 
