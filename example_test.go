@@ -54,7 +54,7 @@ func ExampleOnelineBuilder() {
 	// SELECT foo, bar FROM table WHERE id = $1
 }
 
-func ExampleBuilderFunc() {
+func ExampleNew() {
 	q := builq.New()
 	q("SELECT this")
 	q("FROM %$", "that")
