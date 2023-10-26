@@ -17,11 +17,11 @@ This tiny library helps to build queries and handles parameter indexing.
 ## Features
 
 * Simple and easy.
-* Safe & fast.
+* Safe and fast.
 * Tested.
 * Dependency-free.
 
-See [these docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
+See [docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
 
 ## Install
 
@@ -36,12 +36,12 @@ go get github.com/cristalhq/builq
 ```go
 cols := builq.Columns{"foo, bar"}
 
-var b builq.Builder
-b.Addf("SELECT %s FROM %s", cols, "users").
-	Addf("WHERE active IS TRUE").
-	Addf("AND user_id = %$ OR user = %$", 42, "root")
+q := builq.New()
+q("SELECT %s FROM %s", cols, "users")
+q("WHERE active IS TRUE")
+q("AND user_id = %$ OR user = %$", 42, "root")
 
-query, args, err := b.Build()
+query, args, err := q.Build()
 if err != nil {
 	panic(err)
 }
