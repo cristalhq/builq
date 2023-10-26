@@ -41,19 +41,23 @@ type OnelineBuilder struct {
 // BuildFn represents [Builder.Addf]. Just for the easier BuilderFunc declaration.
 type BuildFn func(format constString, args ...any) *Builder
 
+// Build the query and arguments.
 func (q BuildFn) Build() (query string, args []any, err error) {
 	return q("").Build()
 }
 
+// DebugBuild the query, good for debugging but not for REAL usage.
 func (q BuildFn) DebugBuild() string {
 	return q("").DebugBuild()
 }
 
+// New returns a new query builder, same as [Builder].
 func New() BuildFn {
 	var b Builder
 	return b.Addf
 }
 
+// New returns a new query builder, same as [OnelineBuilder].
 func NewOneline() BuildFn {
 	var b OnelineBuilder
 	return b.Addf
@@ -77,6 +81,20 @@ func (b *Builder) Addf(format constString, args ...any) *Builder {
 	return b.addf(format, args...)
 }
 
+// Build the query and arguments.
+func (b *Builder) Build() (query string, args []any, err error) {
+	query, args = b.build()
+	return query, args, b.err
+}
+
+// DebugBuild the query, good for debugging but not for REAL usage.
+func (b *Builder) DebugBuild() (query string) {
+	b.debug = true
+	query, _ = b.build()
+	b.debug = false
+	return query
+}
+
 func (b *Builder) addf(format constString, args ...any) *Builder {
 	if len(b.parts) == 0 {
 		// TODO: better defaults
@@ -88,19 +106,7 @@ func (b *Builder) addf(format constString, args ...any) *Builder {
 	return b
 }
 
-func (b *Builder) Build() (query string, args []any, err error) {
-	query, args = b.build()
-	return query, args, b.err
-}
-
-func (b *Builder) DebugBuild() (query string) {
-	b.debug = true
-	query, _ = b.build()
-	b.debug = false
-	return query
-}
-
-func (b *Builder) build() (string, []any) {
+func (b *Builder) build() (_ string, _ []any) {
 	var query strings.Builder
 	// TODO: better default (sum of parts + est len of indexes)
 	query.Grow(100)

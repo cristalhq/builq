@@ -8,6 +8,33 @@ import (
 	"github.com/cristalhq/builq"
 )
 
+func ExampleNew() {
+	cols := builq.Columns{"foo, bar"}
+
+	q := builq.New()
+	q("SELECT %s FROM %s", cols, "users")
+	q("WHERE active IS TRUE")
+	q("AND user_id = %$ OR user = %$", 42, "root")
+
+	query, args, err := q.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("query:\n%v", query)
+	fmt.Printf("args:\n%v", args)
+
+	// Output:
+	//
+	// query:
+	// SELECT foo, bar FROM users
+	// WHERE active IS TRUE
+	// AND user_id = $1 OR user = $2
+	//
+	// args:
+	// [42 root]
+}
+
 func ExampleBuilder() {
 	cols := builq.Columns{"foo", "bar"}
 
@@ -52,26 +79,6 @@ func ExampleOnelineBuilder() {
 
 	// Output:
 	// SELECT foo, bar FROM table WHERE id = $1
-}
-
-func ExampleNew() {
-	q := builq.New()
-	q("SELECT this")
-	q("FROM %$", "that")
-
-	query, _, err := q.Build()
-	panicIf(err)
-	debug := q.DebugBuild()
-
-	fmt.Print(query)
-	fmt.Print(debug)
-
-	// Output:
-	// SELECT this
-	// FROM $1
-	//
-	// SELECT this
-	// FROM 'that'
 }
 
 func ExampleBuilder_DebugBuild() {
