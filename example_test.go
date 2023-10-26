@@ -55,18 +55,23 @@ func ExampleOnelineBuilder() {
 }
 
 func ExampleBuilderFunc() {
-	b, f := builq.BuilderFunc()
-	f("SELECT this")
-	f("FROM %$", "that")
+	q := builq.New()
+	q("SELECT this")
+	q("FROM %$", "that")
 
-	query, _, err := b.Build()
+	query, _, err := builq.Build(q)
 	panicIf(err)
+	debug := builq.Debug(q)
 
 	fmt.Print(query)
+	fmt.Print(debug)
 
 	// Output:
 	// SELECT this
 	// FROM $1
+	//
+	// SELECT this
+	// FROM 'that'
 }
 
 func ExampleBuilder_DebugBuild() {

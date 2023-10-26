@@ -39,12 +39,24 @@ type OnelineBuilder struct {
 }
 
 // BuildFn represents [Builder.Addf]. Just for the easier BuilderFunc declaration.
-type BuildFn = func(format constString, args ...any) *Builder
+type BuildFn func(format constString, args ...any) *Builder
 
-// BuilderFunc return builder and shorthand func to build queries. See examples.
-func BuilderFunc() (*Builder, BuildFn) {
+func New() BuildFn {
 	var b Builder
-	return &b, b.Addf
+	return b.Addf
+}
+
+func NewOneline() BuildFn {
+	var b OnelineBuilder
+	return b.Addf
+}
+
+func Build(q BuildFn) (query string, args []any, err error) {
+	return q("").Build()
+}
+
+func Debug(q BuildFn) string {
+	return q("").DebugBuild()
 }
 
 // Addf formats according to a format specifier, writes to query and appends args.
