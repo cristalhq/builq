@@ -59,9 +59,9 @@ func ExampleNew() {
 	q("SELECT this")
 	q("FROM %$", "that")
 
-	query, _, err := builq.Build(q)
+	query, _, err := q.Build()
 	panicIf(err)
-	debug := builq.Debug(q)
+	debug := q.DebugBuild()
 
 	fmt.Print(query)
 	fmt.Print(debug)
