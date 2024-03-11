@@ -8,6 +8,32 @@ Examples in [example_test.go](example_test.go) explicitly show that query argume
 
 The `%s` verb should be used with an extra care, no user input should be passed through it.
 
+## SQL injections and `%s` usage
+
+`builq` is language-agnostic query builder that doesn't differentiate Postgres SQL syntax from MySQL. The `%s` verb was introduced to give flexibility to the library users.
+
+The following query is valid for `builq` but isn't valid for Postgres:
+
+```go
+const tableName = "my_table"
+user := "admin"
+
+q := builq.New()
+q("SELECT * FROM %$ WHERE username = %$", tableName, user)
+
+// will generate query: SELECT * FROM $1 WHERE username = $2
+```
+
+The query above is correct for `builq` and is incorrect for Postgres (error `SQLSTATE 42601`). Exactly for such cases, `%s` was added:
+
+```go
+q("SELECT * FROM %s WHERE username = %$", tableName, user)
+
+// will generate query: SELECT * FROM my_table WHERE username = $1
+```
+
+Remember that `%s` should be used with care, and as mentioned in the section above, no user input should be passed via `%s`.
+
 ## Compile-time queries
 
 To enforce compile-time queries `builq.Builder` accepts only constant strings:
