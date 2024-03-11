@@ -19,6 +19,7 @@ This tiny library helps to build queries and handles parameter indexing.
 * Simple and easy.
 * Safe and fast.
 * Tested.
+* Language-agnostic.
 * Dependency-free.
 
 See [docs][pkg-url] or [GUIDE.md](GUIDE.md) for more details.
