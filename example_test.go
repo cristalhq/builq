@@ -21,8 +21,10 @@ func ExampleNew() {
 		panic(err)
 	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	//
@@ -51,10 +53,14 @@ func ExampleBuilder() {
 	sb.Addf(orClause2, 42)
 
 	query, args, err := sb.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -73,7 +79,9 @@ func ExampleOnelineBuilder() {
 	b.Addf("WHERE id = %$", 123)
 
 	query, _, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Print(query)
 
@@ -113,10 +121,14 @@ func ExampleColumns() {
 	b.Addf("VALUES (%?, %?, %?);", params...)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -135,10 +147,14 @@ func Example_query1() {
 		Addf("AND user_id = %$ OR user = %$", 42, "root")
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -159,10 +175,14 @@ func Example_query2() {
 	b.Addf("LIMIT 100;")
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -184,10 +204,14 @@ func Example_query3() {
 		Addf("LIMIT 100;")
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -229,10 +253,14 @@ func Example_queryWhere() {
 	}
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -255,10 +283,14 @@ func Example_slicePostgres() {
 	b.Addf("VALUES (%+$);", params)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -276,10 +308,14 @@ func Example_sliceMySQL() {
 	b.Addf("VALUES (%+?);", params)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -299,10 +335,14 @@ func Example_insertReturn() {
 	b.Addf("RETURNING %s;", cols)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -324,10 +364,14 @@ func Example_batchPostgres() {
 	b.Addf("VALUES %#$;", params)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -348,10 +392,14 @@ func Example_batchMySQL() {
 	b.Addf("VALUES %#?;", params)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -372,10 +420,14 @@ func Example_sliceInBatch() {
 	b.Addf("VALUES %#?;", params)
 
 	query, args, err := b.Build()
-	panicIf(err)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("query:\n%v", query)
-	fmt.Printf("args:\n%v", args)
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
 
 	// Output:
 	// query:
@@ -383,10 +435,4 @@ func Example_sliceInBatch() {
 	// VALUES (?, ?), (?, ?);
 	// args:
 	// [42 [1 2 3] 69 [4 5 6]]
-}
-
-func panicIf(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
