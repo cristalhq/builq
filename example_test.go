@@ -8,6 +8,26 @@ import (
 	"github.com/cristalhq/builq"
 )
 
+func ExampleQ() {
+	cols := builq.Columns{"foo, bar"}
+
+	query, args, err := builq.Q("SELECT %s FROM %s WHERE id = %$", cols, "users", 123)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
+
+	// Output:
+	// query:
+	// SELECT foo, bar FROM users WHERE id = $1
+	// args:
+	// [123]
+}
+
 func ExampleNew() {
 	cols := builq.Columns{"foo, bar"}
 
