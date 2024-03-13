@@ -2,6 +2,7 @@ package builq
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -152,6 +153,27 @@ func (b *Builder) writeDebug(sb *strings.Builder, arg any) {
 		sb.WriteByte('\'')
 		fmt.Fprint(sb, arg)
 		sb.WriteByte('\'')
+	}
+}
+
+func (b *Builder) asSlice(v any) []any {
+	value := reflect.ValueOf(v)
+
+	if value.Kind() != reflect.Slice {
+		b.setErr(errNonSliceArgument)
+		return nil
+	}
+
+	res := make([]any, value.Len())
+	for i := 0; i < value.Len(); i++ {
+		res[i] = value.Index(i).Interface()
+	}
+	return res
+}
+
+func (b *Builder) setErr(err error) {
+	if b.err == nil {
+		b.err = err
 	}
 }
 
