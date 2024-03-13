@@ -41,10 +41,14 @@ func ExampleNew() {
 		panic(err)
 	}
 
+	debug := q.DebugBuild()
+
 	fmt.Println("query:")
 	fmt.Println(query)
 	fmt.Println("args:")
 	fmt.Println(args)
+	fmt.Println("debug:")
+	fmt.Println(debug)
 
 	// Output:
 	//
@@ -55,6 +59,10 @@ func ExampleNew() {
 	//
 	// args:
 	// [42 root]
+	// debug:
+	// SELECT foo, bar FROM 'users'
+	// WHERE active IS TRUE
+	// AND user_id = 42 OR user = 'root'
 }
 
 func ExampleBuilder() {
@@ -113,12 +121,14 @@ func ExampleBuilder_DebugBuild() {
 	cols := builq.Columns{"foo", "bar"}
 
 	ts := time.Date(2009, time.November, 10, 12, 13, 15, 16, time.UTC)
+	d := 4 * time.Second
 
 	var sb builq.Builder
 	sb.Addf("SELECT %s FROM table", cols)
 	sb.Addf("WHERE id = %$", 123)
 	sb.Addf("OR id = %$ + %d", "42", 69.069)
 	sb.Addf("XOR created_at = %$", ts)
+	sb.Addf("MORE offset = %$", d)
 	sb.Addf("MAYBE IN arr = %$", []int{1, 2, 3})
 
 	fmt.Printf("debug:\n%v", sb.DebugBuild())
@@ -129,6 +139,7 @@ func ExampleBuilder_DebugBuild() {
 	// WHERE id = 123
 	// OR id = '42' + 69.069
 	// XOR created_at = '2009-11-10 12:13:15:999999'
+	// MORE offset = '4s'
 	// MAYBE IN arr = '[1 2 3]'
 }
 

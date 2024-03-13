@@ -2,7 +2,6 @@ package builq
 
 import (
 	"errors"
-	"reflect"
 	"strings"
 )
 
@@ -134,21 +133,6 @@ func (b *Builder) build() (_ string, _ []any) {
 	return q, resArgs
 }
 
-func (b *Builder) asSlice(v any) []any {
-	value := reflect.ValueOf(v)
-
-	if value.Kind() != reflect.Slice {
-		b.setErr(errNonSliceArgument)
-		return nil
-	}
-
-	res := make([]any, value.Len())
-	for i := 0; i < value.Len(); i++ {
-		res[i] = value.Index(i).Interface()
-	}
-	return res
-}
-
 var (
 	// errTooFewArguments passed to [Builder.Addf] method.
 	errTooFewArguments = errors.New("too few arguments")
@@ -171,9 +155,3 @@ var (
 	// errNonNumericArg expected number for %d but got something else.
 	errNonNumericArg = errors.New("expected numeric argument")
 )
-
-func (b *Builder) setErr(err error) {
-	if b.err == nil {
-		b.err = err
-	}
-}
