@@ -56,7 +56,6 @@ func ExampleNew() {
 	// SELECT foo, bar FROM users
 	// WHERE active IS TRUE
 	// AND user_id = $1 OR user = $2
-	//
 	// args:
 	// [42 root]
 	// debug:

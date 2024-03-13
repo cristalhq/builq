@@ -125,11 +125,8 @@ func (b *Builder) build() (_ string, _ []any) {
 		b.setErr(err)
 	}
 
-	// drop last separator for clarity.
-	q := query.String()
-	if q[len(q)-1] == b.sep {
-		q = q[:len(q)-1]
-	}
+	// drop last separators for clarity.
+	q := strings.TrimRight(query.String(), string(b.sep))
 	return q, resArgs
 }
 
