@@ -38,6 +38,11 @@ type OnelineBuilder struct {
 	Builder
 }
 
+// Q is a handy helper. Works as [NewOnline] and [Build] in one call.
+func Q(format constString, args ...any) (query string, resArgs []any, err error) {
+	return NewOneline()(format, args...).Build()
+}
+
 // BuildFn represents [Builder.Addf]. Just for the easier BuilderFunc declaration.
 type BuildFn func(format constString, args ...any) *Builder
 
