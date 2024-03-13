@@ -120,7 +120,13 @@ func (b *Builder) build() (_ string, _ []any) {
 		err := b.write(&query, &resArgs, format, args...)
 		b.setErr(err)
 	}
-	return query.String(), resArgs
+
+	// drop last separator for clarity.
+	q := query.String()
+	if q[len(q)-1] == b.sep {
+		q = q[:len(q)-1]
+	}
+	return q, resArgs
 }
 
 func (b *Builder) asSlice(v any) []any {
