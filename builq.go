@@ -140,6 +140,9 @@ var (
 	// errUnsupportedVerb when %X is found and X isn't supported.
 	errUnsupportedVerb = errors.New("unsupported verb")
 
+	// errLonelyVerb when % is found without a verb.
+	errLonelyVerb = errors.New("lonely verb")
+
 	// errIncorrectVerb is passed like `%+`.
 	errIncorrectVerb = errors.New("incorrect verb")
 

@@ -23,15 +23,14 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 
 		sb.WriteString(s[:n])
 
-		if argID >= len(args) {
-			return errTooFewArguments
-		}
-
-		arg := args[argID]
-
 		s = s[n+1:] // skip '%'
 		switch verb := s[0]; verb {
 		case '$', '?', 's', 'd':
+			if argID >= len(args) {
+				return errTooFewArguments
+			}
+
+			arg := args[argID]
 			s = s[1:]
 			b.writeArg(sb, resArgs, verb, arg)
 
@@ -45,6 +44,11 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 
 			switch verb := s[0]; verb {
 			case '$', '?':
+				if argID >= len(args) {
+					return errTooFewArguments
+				}
+
+				arg := args[argID]
 				s = s[1:]
 
 				if isBatch {
@@ -55,6 +59,15 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 			default:
 				b.setErr(errUnsupportedVerb)
 			}
+
+		case '%':
+			argID--
+			s = s[1:]
+			sb.WriteByte('%')
+
+		case ' ':
+			b.setErr(errLonelyVerb)
+
 		default:
 			b.setErr(errUnsupportedVerb)
 		}
