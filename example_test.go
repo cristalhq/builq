@@ -168,6 +168,27 @@ func ExampleColumns() {
 	// [42 right now just testing]
 }
 
+func Example_queryWithPercent() {
+	var q builq.OnelineBuilder
+	q.Addf("SELECT foo FROM bar WHERE shard = %? %% 10", 42)
+
+	query, args, err := q.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
+
+	// Output:
+	// query:
+	// SELECT foo FROM bar WHERE shard = ? % 10
+	// args:
+	// [42]
+}
+
 func Example_query1() {
 	cols := builq.Columns{"foo, bar"}
 
