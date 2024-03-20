@@ -12,26 +12,27 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 	for argID := 0; ; argID++ {
 		idx := strings.IndexByte(s, '%')
 		if idx == -1 {
-			if argID != len(args) {
-				b.setErr(errTooManyArguments)
+			var err error
+			if len(args) != argID {
+				err = fmt.Errorf("%w: have %d args, expected %d", errTooManyArguments, len(args), argID)
 			}
 
 			sb.WriteString(s)
 			sb.WriteByte(b.sep)
-			return nil
+			return err
 		}
 
 		sb.WriteString(s[:idx])
 
 		s = s[idx+1:] // skip '%'
 		if len(s) == 0 {
-			return errLonelyVerb
+			return errLonelyModifier
 		}
 
 		switch verb := s[0]; verb {
 		case '$', '?', 's', 'd':
 			if argID >= len(args) {
-				return errTooFewArguments
+				return fmt.Errorf("%w: have %d args, want %d", errTooFewArguments, len(args), argID+1)
 			}
 
 			arg := args[argID]
@@ -41,15 +42,14 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 		case '+', '#':
 			isBatch := verb == '#'
 			s = s[1:]
-			if len(s) < 1 {
-				b.setErr(errIncorrectVerb)
-				continue
+			if len(s) < 1 || s[0] == ' ' {
+				return fmt.Errorf("%w: '%c' requires additional '$' or '?'", errIncorrectVerb, verb)
 			}
 
 			switch verb := s[0]; verb {
 			case '$', '?':
 				if argID >= len(args) {
-					return errTooFewArguments
+					return fmt.Errorf("%w: have %d args, want %d", errTooFewArguments, len(args), argID+1)
 				}
 
 				arg := args[argID]
@@ -60,8 +60,9 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 				} else {
 					b.writeSlice(sb, resArgs, verb, arg)
 				}
+
 			default:
-				b.setErr(errUnsupportedVerb)
+				return fmt.Errorf("%w: '%c' is not supported", errUnsupportedVerb, verb)
 			}
 
 		case '%':
@@ -70,10 +71,10 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 			sb.WriteByte('%')
 
 		case ' ':
-			b.setErr(errLonelyVerb)
+			return errLonelyModifier
 
 		default:
-			b.setErr(errUnsupportedVerb)
+			return fmt.Errorf("%w: '%c' is not supported", errUnsupportedVerb, verb)
 		}
 	}
 }
@@ -136,12 +137,10 @@ func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg a
 		return
 	}
 
-	// store the first placeholder used in the query
-	// to check for mixed placeholders later
-	if b.placeholder == 0 {
+	switch {
+	case b.placeholder == 0:
 		b.placeholder = verb
-	}
-	if b.placeholder != verb {
+	case b.placeholder != verb:
 		b.setErr(errMixedPlaceholders)
 	}
 }
@@ -188,12 +187,6 @@ func (b *Builder) asSlice(v any) []any {
 	return res
 }
 
-func (b *Builder) setErr(err error) {
-	if b.err == nil {
-		b.err = err
-	}
-}
-
 func (b *Builder) assertNumber(v any) {
 	switch v.(type) {
 	case int, int8, int16, int32, int64,
@@ -201,5 +194,11 @@ func (b *Builder) assertNumber(v any) {
 		float32, float64:
 	default:
 		b.setErr(errNonNumericArg)
+	}
+}
+
+func (b *Builder) setErr(err error) {
+	if b.err == nil {
+		b.err = err
 	}
 }

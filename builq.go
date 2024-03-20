@@ -140,17 +140,17 @@ var (
 	// errUnsupportedVerb when %X is found and X isn't supported.
 	errUnsupportedVerb = errors.New("unsupported verb")
 
-	// errLonelyVerb when % is found without a verb.
-	errLonelyVerb = errors.New("lonely verb")
+	// errLonelyModifier when % is found without a verb.
+	errLonelyModifier = errors.New("lonely modifier without a verb")
 
 	// errIncorrectVerb is passed like `%+`.
 	errIncorrectVerb = errors.New("incorrect verb")
 
 	// errMixedPlaceholders when $ AND ? are mixed in 1 query.
-	errMixedPlaceholders = errors.New("mixed placeholders must not be used in a single query")
+	errMixedPlaceholders = errors.New("mixed placeholders in a single query")
 
 	// errNonSliceArgument when a non-slice argument passed to placeholder with `+` or `#`.
-	errNonSliceArgument = errors.New("non-slice arguments must not be used with slice modifiers")
+	errNonSliceArgument = errors.New("non-slice arguments with slice modifiers")
 
 	// errNonNumericArg expected number for %d but got something else.
 	errNonNumericArg = errors.New("expected numeric argument")

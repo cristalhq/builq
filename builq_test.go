@@ -38,17 +38,18 @@ func TestBuilder(t *testing.T) {
 		})
 	}
 
-	test("bad verb", errUnsupportedVerb, "SELECT * FROM %+ slice", 1)
-	test("bad verb", errUnsupportedVerb, "SELECT * FROM %+ slice", 1)
+	test("incorrect verb", errIncorrectVerb, "SELECT * FROM %+ slice", 1)
+	test("incorrect verb", errIncorrectVerb, "SELECT * FROM %+ slice", 1)
 	test("incorrect verb 1", errIncorrectVerb, "SELECT * FROM %+", 1)
 	test("incorrect verb 2", errIncorrectVerb, "SELECT * FROM %#", 1)
-	test("lonely verb", errLonelyVerb, "SELECT * FROM % super")
-	test("lonely verb", errLonelyVerb, "SELECT foo FROM bar%")
+	test("lonely verb", errLonelyModifier, "SELECT * FROM % super")
+	test("lonely verb", errLonelyModifier, "SELECT foo FROM bar%")
 	test("too few arguments", errTooFewArguments, "SELECT foo FROM bar%d")
 	test("too few arguments", errTooFewArguments, "SELECT * FROM %s")
 	test("too few arguments", errTooFewArguments, "SELECT * FROM %$")
 	test("too few arguments", errTooFewArguments, "SELECT * FROM %+?")
 	test("too many arguments", errTooManyArguments, "SELECT * FROM %s", "users", "users")
+	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %+x")
 	test("unsupported verb", errUnsupportedVerb, "SELECT * FROM %v", "users")
 	test("mixed placeholders", errMixedPlaceholders, "WHERE foo = %$ AND bar = %?", 1, 2)
 	test("non-slice argument", errNonSliceArgument, "WHERE foo = %+$", 1)
@@ -79,7 +80,7 @@ func FuzzBuilder(f *testing.F) {
 			if errors.Is(err, errTooFewArguments) ||
 				errors.Is(err, errTooManyArguments) ||
 				errors.Is(err, errUnsupportedVerb) ||
-				errors.Is(err, errLonelyVerb) ||
+				errors.Is(err, errLonelyModifier) ||
 				errors.Is(err, errIncorrectVerb) ||
 				errors.Is(err, errMixedPlaceholders) ||
 				errors.Is(err, errNonSliceArgument) ||
