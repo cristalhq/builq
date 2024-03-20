@@ -10,8 +10,8 @@ import (
 
 func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...any) error {
 	for argID := 0; ; argID++ {
-		n := strings.IndexByte(s, '%')
-		if n == -1 {
+		idx := strings.IndexByte(s, '%')
+		if idx == -1 {
 			if argID != len(args) {
 				b.setErr(errTooManyArguments)
 			}
@@ -21,9 +21,13 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 			return nil
 		}
 
-		sb.WriteString(s[:n])
+		sb.WriteString(s[:idx])
 
-		s = s[n+1:] // skip '%'
+		s = s[idx+1:] // skip '%'
+		if len(s) == 0 {
+			return errLonelyVerb
+		}
+
 		switch verb := s[0]; verb {
 		case '$', '?', 's', 'd':
 			if argID >= len(args) {
