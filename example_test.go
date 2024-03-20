@@ -67,19 +67,19 @@ func ExampleNew() {
 func ExampleBuilder() {
 	cols := builq.Columns{"foo", "bar"}
 
-	var sb builq.Builder
-	sb.Addf("SELECT %s FROM %s", cols, "table")
-	sb.Addf("WHERE id = %$", 123)
+	var b builq.Builder
+	b.Addf("SELECT %s FROM %s", cols, "table")
+	b.Addf("WHERE id = %$", 123)
 
 	// this WILL NOT complile
 	// var orClause = "OR id = %$"
-	// sb.Addf(orClause, 42)
+	// b.Addf(orClause, 42)
 
 	// WILL compile
 	const orClause2 = "OR id = %$"
-	sb.Addf(orClause2, 42)
+	b.Addf(orClause2, 42)
 
-	query, args, err := sb.Build()
+	query, args, err := b.Build()
 	if err != nil {
 		panic(err)
 	}
@@ -122,15 +122,15 @@ func ExampleBuilder_DebugBuild() {
 	ts := time.Date(2009, time.November, 10, 12, 13, 15, 16, time.UTC)
 	d := 4 * time.Second
 
-	var sb builq.Builder
-	sb.Addf("SELECT %s FROM table", cols)
-	sb.Addf("WHERE id = %$", 123)
-	sb.Addf("OR id = %$ + %d", "42", 69.069)
-	sb.Addf("XOR created_at = %$", ts)
-	sb.Addf("MORE offset = %$", d)
-	sb.Addf("MAYBE IN arr = %$", []int{1, 2, 3})
+	var b builq.Builder
+	b.Addf("SELECT %s FROM table", cols)
+	b.Addf("WHERE id = %$", 123)
+	b.Addf("OR id = %$ + %d", "42", 69.069)
+	b.Addf("XOR created_at = %$", ts)
+	b.Addf("MORE offset = %$", d)
+	b.Addf("MAYBE IN arr = %$", []int{1, 2, 3})
 
-	fmt.Printf("debug:\n%v", sb.DebugBuild())
+	fmt.Printf("debug:\n%v", b.DebugBuild())
 
 	// Output:
 	// debug:
