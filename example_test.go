@@ -45,9 +45,9 @@ func ExampleNew() {
 
 	fmt.Println("query:")
 	fmt.Println(query)
-	fmt.Println("args:")
+	fmt.Println("\nargs:")
 	fmt.Println(args)
-	fmt.Println("debug:")
+	fmt.Println("\ndebug:")
 	fmt.Println(debug)
 
 	// Output:
@@ -56,8 +56,10 @@ func ExampleNew() {
 	// SELECT foo, bar FROM users
 	// WHERE active IS TRUE
 	// AND user_id = $1 OR user = $2
+	//
 	// args:
 	// [42 root]
+	//
 	// debug:
 	// SELECT foo, bar FROM 'users'
 	// WHERE active IS TRUE
