@@ -47,17 +47,27 @@ if err != nil {
 	panic(err)
 }
 
-fmt.Printf("query:\n%v", query)
-fmt.Printf("args:\n%v", args)
+debug := q.DebugBuild()
 
-// Output:
-//
+fmt.Println("query:")
+fmt.Println(query)
+fmt.Println("\nargs:")
+fmt.Println(args)
+fmt.Println("\ndebug:")
+fmt.Println(debug)
+
 // query:
 // SELECT foo, bar FROM users
 // WHERE active IS TRUE
 // AND user_id = $1 OR user = $2
+//
 // args:
 // [42 root]
+//
+// debug:
+// SELECT foo, bar FROM 'users'
+// WHERE active IS TRUE
+// AND user_id = 42 OR user = 'root'
 ```
 
 See examples: [example_test.go](example_test.go).

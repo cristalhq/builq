@@ -45,9 +45,9 @@ func ExampleNew() {
 
 	fmt.Println("query:")
 	fmt.Println(query)
-	fmt.Println("args:")
+	fmt.Println("\nargs:")
 	fmt.Println(args)
-	fmt.Println("debug:")
+	fmt.Println("\ndebug:")
 	fmt.Println(debug)
 
 	// Output:
@@ -56,8 +56,10 @@ func ExampleNew() {
 	// SELECT foo, bar FROM users
 	// WHERE active IS TRUE
 	// AND user_id = $1 OR user = $2
+	//
 	// args:
 	// [42 root]
+	//
 	// debug:
 	// SELECT foo, bar FROM 'users'
 	// WHERE active IS TRUE
@@ -130,7 +132,8 @@ func ExampleBuilder_DebugBuild() {
 	b.Addf("MORE offset = %$", d)
 	b.Addf("MAYBE IN arr = %$", []int{1, 2, 3})
 
-	fmt.Printf("debug:\n%v", b.DebugBuild())
+	fmt.Println("debug:")
+	fmt.Println(b.DebugBuild())
 
 	// Output:
 	// debug:
@@ -283,27 +286,27 @@ func Example_queryWhere() {
 		"limit":    100.1,
 	}
 
-	var b builq.Builder
-	b.Addf("SELECT * FROM foo")
-	b.Addf("WHERE active IS TRUE")
+	q := builq.New()
+	q("SELECT * FROM foo")
+	q("WHERE active IS TRUE")
 
 	if name, ok := filter["name"]; ok {
-		b.Addf("AND name = %$", name)
+		q("AND name = %$", name)
 	}
 	if cat, ok := filter["category"]; ok {
-		b.Addf("AND category IN (%+$)", cat)
+		q("AND category IN (%+$)", cat)
 	}
 	if pat, ok := filter["pat"]; ok {
-		b.Addf("AND page LIKE '%s'", pat)
+		q("AND page LIKE '%s'", pat)
 	}
 	if prob, ok := filter["prob"]; ok {
-		b.Addf("AND prob < %s", prob)
+		q("AND prob < %s", prob)
 	}
 	if limit, ok := filter["limit"]; ok {
-		b.Addf("LIMIT %d;", limit)
+		q("LIMIT %d;", limit)
 	}
 
-	query, args, err := b.Build()
+	query, args, err := q.Build()
 	if err != nil {
 		panic(err)
 	}
