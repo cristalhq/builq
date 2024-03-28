@@ -37,7 +37,9 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 
 			arg := args[argID]
 			s = s[1:]
-			b.writeArg(sb, resArgs, verb, arg)
+			if err := b.writeArg(sb, resArgs, verb, arg); err != nil {
+				return err
+			}
 
 		case '+', '#':
 			isBatch := verb == '#'
@@ -56,9 +58,13 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 				s = s[1:]
 
 				if isBatch {
-					b.writeBatch(sb, resArgs, verb, arg)
+					if err := b.writeBatch(sb, resArgs, verb, arg); err != nil {
+						return err
+					}
 				} else {
-					b.writeSlice(sb, resArgs, verb, arg)
+					if err := b.writeSlice(sb, resArgs, verb, arg); err != nil {
+						return err
+					}
 				}
 
 			default:
@@ -79,30 +85,44 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 	}
 }
 
-func (b *Builder) writeBatch(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
-	for i, arg := range b.asSlice(arg) {
+func (b *Builder) writeBatch(sb *strings.Builder, resArgs *[]any, verb byte, arg any) error {
+	args, err := b.asSlice(arg)
+	if err != nil {
+		return err
+	}
+	for i, arg := range args {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
 		sb.WriteByte('(')
-		b.writeSlice(sb, resArgs, verb, arg)
+		if err := b.writeSlice(sb, resArgs, verb, arg); err != nil {
+			return err
+		}
 		sb.WriteByte(')')
 	}
+	return nil
 }
 
-func (b *Builder) writeSlice(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
-	for i, arg := range b.asSlice(arg) {
+func (b *Builder) writeSlice(sb *strings.Builder, resArgs *[]any, verb byte, arg any) error {
+	args, err := b.asSlice(arg)
+	if err != nil {
+		return err
+	}
+	for i, arg := range args {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
-		b.writeArg(sb, resArgs, verb, arg)
+		if err := b.writeArg(sb, resArgs, verb, arg); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg any) {
+func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg any) error {
 	if b.debug {
 		b.writeDebug(sb, arg)
-		return
+		return nil
 	}
 
 	var isSimple bool
@@ -128,21 +148,25 @@ func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg a
 		}
 	case 'd':
 		isSimple = true
-		b.assertNumber(arg)
+		if err := b.assertNumber(arg); err != nil {
+			return err
+		}
 		fmt.Fprint(sb, arg)
 	}
 
 	// ok to have many simple placeholders
 	if isSimple {
-		return
+		return nil
 	}
 
 	switch {
 	case b.placeholder == 0:
 		b.placeholder = verb
 	case b.placeholder != verb:
-		b.setErr(errMixedPlaceholders)
+		return errMixedPlaceholders
 	}
+
+	return nil
 }
 
 func (b *Builder) writeDebug(sb *strings.Builder, arg any) {
@@ -172,33 +196,27 @@ func (b *Builder) writeDebug(sb *strings.Builder, arg any) {
 	}
 }
 
-func (b *Builder) asSlice(v any) []any {
+func (b *Builder) asSlice(v any) ([]any, error) {
 	value := reflect.ValueOf(v)
 
 	if value.Kind() != reflect.Slice {
-		b.setErr(errNonSliceArgument)
-		return nil
+		return nil, errNonSliceArgument
 	}
 
 	res := make([]any, value.Len())
 	for i := 0; i < value.Len(); i++ {
 		res[i] = value.Index(i).Interface()
 	}
-	return res
+	return res, nil
 }
 
-func (b *Builder) assertNumber(v any) {
+func (b *Builder) assertNumber(v any) error {
 	switch v.(type) {
 	case int, int8, int16, int32, int64,
 		uint, uint8, uint16, uint32, uint64,
 		float32, float64:
+		return nil
 	default:
-		b.setErr(errNonNumericArg)
-	}
-}
-
-func (b *Builder) setErr(err error) {
-	if b.err == nil {
-		b.err = err
+		return errNonNumericArg
 	}
 }
