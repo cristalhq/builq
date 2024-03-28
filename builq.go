@@ -25,11 +25,10 @@ func (c Columns) Prefixed(p string) string {
 type Builder struct {
 	parts       []string
 	args        [][]any
-	err         error // the first error occurred while building the query.
-	counter     int   // a counter for numbered placeholders ($1, $2, ...).
-	placeholder byte  // a placeholder used to build the query.
-	sep         byte  // a separator between Addf calls.
-	debug       bool  // is it DebugBuild call to fill with args.
+	counter     int  // a counter for numbered placeholders ($1, $2, ...).
+	placeholder byte // a placeholder used to build the query.
+	sep         byte // a separator between Addf calls.
+	debug       bool // is it DebugBuild call to fill with args.
 }
 
 // OnelineBuilder behaves like Builder but result is 1 line.
@@ -87,14 +86,13 @@ func (b *Builder) Addf(format constString, args ...any) *Builder {
 
 // Build the query and arguments.
 func (b *Builder) Build() (query string, args []any, err error) {
-	query, args = b.build()
-	return query, args, b.err
+	return b.build()
 }
 
 // DebugBuild the query, good for debugging but not for REAL usage.
 func (b *Builder) DebugBuild() (query string) {
 	b.debug = true
-	query, _ = b.build()
+	query, _, _ = b.build()
 	b.debug = false
 	return query
 }
@@ -110,7 +108,7 @@ func (b *Builder) addf(format constString, args ...any) *Builder {
 	return b
 }
 
-func (b *Builder) build() (_ string, _ []any) {
+func (b *Builder) build() (string, []any, error) {
 	var query strings.Builder
 	// TODO: better default (sum of parts + est len of indexes)
 	query.Grow(100)
@@ -121,13 +119,14 @@ func (b *Builder) build() (_ string, _ []any) {
 		format := b.parts[i]
 		args := b.args[i]
 
-		err := b.write(&query, &resArgs, format, args...)
-		b.setErr(err)
+		if err := b.write(&query, &resArgs, format, args...); err != nil {
+			return "", nil, err
+		}
 	}
 
 	// drop last separators for clarity.
 	q := strings.TrimRight(query.String(), string(b.sep))
-	return q, resArgs
+	return q, resArgs, nil
 }
 
 var (
