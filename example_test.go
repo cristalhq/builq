@@ -379,6 +379,31 @@ func Example_sliceMySQL() {
 	// [42 true str]
 }
 
+func Example_sliceMSSQL() {
+	params := []any{42, true, "str"}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES (%+@);", params)
+
+	query, args, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, flag, name)
+	// VALUES (@p1, @p2, @p3);
+	// args:
+	// [42 true str]
+}
+
 func Example_insertReturn() {
 	cols := builq.Columns{"id", "is_active", "name"}
 	params := []any{true, "str"}
@@ -459,6 +484,34 @@ func Example_batchMySQL() {
 	// query:
 	// INSERT INTO table (id, flag, name)
 	// VALUES (?, ?, ?), (?, ?, ?);
+	// args:
+	// [42 true str 69 true noice]
+}
+
+func Example_batchMSSQL() {
+	params := [][]any{
+		{42, true, "str"},
+		{69, true, "noice"},
+	}
+
+	var b builq.Builder
+	b.Addf("INSERT INTO table (id, flag, name)")
+	b.Addf("VALUES %#@;", params)
+
+	query, args, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("query:")
+	fmt.Println(query)
+	fmt.Println("args:")
+	fmt.Println(args)
+
+	// Output:
+	// query:
+	// INSERT INTO table (id, flag, name)
+	// VALUES (@p1, @p2, @p3), (@p4, @p5, @p6);
 	// args:
 	// [42 true str 69 true noice]
 }
