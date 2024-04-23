@@ -30,7 +30,7 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 		}
 
 		switch verb := s[0]; verb {
-		case '$', '?', 's', 'd':
+		case '$', '?', '@', 's', 'd':
 			if argID >= len(args) {
 				return fmt.Errorf("%w: have %d args, want %d", errTooFewArguments, len(args), argID+1)
 			}
@@ -49,7 +49,7 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 			}
 
 			switch verb := s[0]; verb {
-			case '$', '?':
+			case '$', '?', '@':
 				if argID >= len(args) {
 					return fmt.Errorf("%w: have %d args, want %d", errTooFewArguments, len(args), argID+1)
 				}
@@ -135,6 +135,11 @@ func (b *Builder) writeArg(sb *strings.Builder, resArgs *[]any, verb byte, arg a
 		*resArgs = append(*resArgs, arg)
 	case '?':
 		sb.WriteByte('?')
+		*resArgs = append(*resArgs, arg)
+	case '@':
+		b.counter++
+		sb.WriteString("@p")
+		sb.WriteString(strconv.Itoa(b.counter))
 		*resArgs = append(*resArgs, arg)
 	case 's':
 		isSimple = true
