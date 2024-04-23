@@ -45,7 +45,7 @@ func (b *Builder) write(sb *strings.Builder, resArgs *[]any, s string, args ...a
 			isBatch := verb == '#'
 			s = s[1:]
 			if len(s) < 1 || s[0] == ' ' {
-				return fmt.Errorf("%w: '%c' requires additional '$' or '?'", errIncorrectVerb, verb)
+				return fmt.Errorf("%w: '%c' requires additional '$', '?' or '@'", errIncorrectVerb, verb)
 			}
 
 			switch verb := s[0]; verb {
