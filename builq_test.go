@@ -66,7 +66,7 @@ func FuzzBuilder(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, format, arg1, arg2 string) {
 		var valid int
-		for _, verb := range []string{"%s", "%$", "%?", "%@"} {
+		for _, verb := range []string{"%s", "%d", "%$", "%?", "%@"} {
 			valid += strings.Count(format, verb)
 		}
 		if valid != 2 {
