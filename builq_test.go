@@ -60,11 +60,13 @@ func TestBuilder(t *testing.T) {
 func FuzzBuilder(f *testing.F) {
 	f.Add("SELECT %s FROM %s", "*", "users")
 	f.Add("SELECT * FROM %s WHERE name = %$", "users", "john")
-	f.Add("SELECT * FROM users WHERE name = %$ AND surname = %$", "john", "doe")
+	f.Add("WHERE name = %$ AND surname = %$", "john", "doe")
+	f.Add("%s WHERE %? == name", "TEST", "john")
+	f.Add("%s WHERE %@ = surname", "TEST", "doe")
 
 	f.Fuzz(func(t *testing.T, format, arg1, arg2 string) {
 		var valid int
-		for _, verb := range []string{"%s", "%$", "%?"} {
+		for _, verb := range []string{"%s", "%d", "%$", "%?", "%@"} {
 			valid += strings.Count(format, verb)
 		}
 		if valid != 2 {
